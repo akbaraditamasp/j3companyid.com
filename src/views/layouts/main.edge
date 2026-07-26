@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{{ String(await $slots.title?.() ?? 'J3 COMPANY').trim() }}}</title>
+  <meta name="description" content="{{{ String(await $slots.description?.() ?? 'J3 COMPANY — sepatu import & vintage premium.').trim() }}}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300..700&family=Public+Sans:wght@300..800&display=swap" />
+  {{{ await vite.asset('src/client/app.css') }}}
+  {{{ await vite.asset('src/client/main.ts') }}}
+</head>
+<body class="bg-white font-sans text-ink antialiased">
+  {{{ await $slots.main() }}}
+  @!component('components/footer')
+</body>
+</html>

@@ -1,0 +1,179 @@
+{{--
+  Hero slideshow — J3 COMPANY
+
+  EDIT SLIDE DI SINI. `image` = path relatif di dalam /static, mis. 'hero/hero-01.jpg'.
+  Biarkan `image: ''` untuk menampilkan gradient placeholder (`bg`) selama foto asli
+  belum tersedia — lihat PLACEHOLDER STRATEGY di plan.
+--}}
+@let(slides = [
+  {
+    image: 'hero/hero-01.jpg',
+    bg: 'bg-[radial-gradient(120%_120%_at_20%_0%,#4a3b31_0%,#241c17_55%,#14110f_100%)]',
+    alt: 'Red Wing Heritage boots di atas workbench',
+    eyebrow: 'New Arrival',
+    title: 'Built For The Long Haul',
+    subtitle: 'Goodyear-welted Red Wing Heritage, imported dan hand-selected.',
+    ctaText: 'Shop Red Wing',
+    ctaHref: '/brands/red-wing',
+  },
+  {
+    image: 'hero/hero-02.jpg',
+    bg: 'bg-[radial-gradient(120%_120%_at_80%_10%,#5a2b2f_0%,#2a1618_55%,#14110f_100%)]',
+    alt: 'RM Williams Craftsman chelsea boots',
+    eyebrow: 'The Australian Original',
+    title: 'One Piece Of Leather',
+    subtitle: 'RM Williams Craftsman — tanpa jahitan, tanpa jalan pintas.',
+    ctaText: 'Shop RM Williams',
+    ctaHref: '/brands/rm-williams',
+  },
+  {
+    image: 'hero/hero-03.jpg',
+    bg: 'bg-[radial-gradient(120%_120%_at_50%_100%,#3c3a35_0%,#1d1b18_55%,#14110f_100%)]',
+    alt: 'Koleksi sepatu vintage premium',
+    eyebrow: 'Curated Vintage',
+    title: 'Worn In, Never Worn Out',
+    subtitle: 'Pasangan langka dan arsip, direstorasi dengan standar museum.',
+    ctaText: 'Browse Collection',
+    ctaHref: '/shop',
+  },
+])
+
+<section
+  role="region"
+  aria-roledescription="carousel"
+  aria-label="Featured collections"
+  x-data="{
+    current: 0,
+    previous: null,
+    count: {{ slides.length }},
+    delay: 6500,
+    timer: null,
+    paused: false,
+    reduce: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    start() {
+      this.stop();
+      if (this.reduce || this.count < 2) return;
+      this.timer = setInterval(() => { if (!this.paused && !document.hidden) this.go(this.current + 1) }, this.delay);
+    },
+    stop() { if (this.timer) clearInterval(this.timer); this.timer = null },
+    go(i) {
+      const n = (i + this.count) % this.count;
+      if (n === this.current) return;
+      this.previous = this.current;
+      this.current = n;
+    },
+    next() { this.go(this.current + 1); this.start() },
+    prev() { this.go(this.current - 1); this.start() }
+  }"
+  x-init="start()"
+  @mouseenter="paused = true"
+  @mouseleave="paused = false"
+  @focusin="paused = true"
+  @focusout="paused = false"
+  class="relative h-[88svh] min-h-155 w-full overflow-hidden bg-ink"
+>
+  @each((slide, i) in slides)
+    <div
+      role="group"
+      aria-roledescription="slide"
+      aria-label="{{ i + 1 }} of {{ slides.length }}"
+      class="absolute inset-0 transition-opacity duration-[900ms] ease-out motion-reduce:transition-none"
+      style="opacity: {{ i === 0 ? '1' : '0' }}; z-index: {{ i === 0 ? '20' : '0' }};"
+      :style="current === {{ i }}
+        ? 'opacity:1; z-index:20'
+        : (previous === {{ i }} ? 'opacity:1; z-index:10' : 'opacity:0; z-index:0')"
+      :aria-hidden="current === {{ i }} ? 'false' : 'true'"
+      :inert="current === {{ i }} ? null : true"
+    >
+      @if(slide.image)
+        <img
+          src="{{ imgOptimize(vite.static(slide.image), { w: 1920, q: 78 }) }}"
+          srcset="{{ imgOptimize(vite.static(slide.image), { w: 960, q: 74 }) }} 960w,
+                  {{ imgOptimize(vite.static(slide.image), { w: 1440, q: 78 }) }} 1440w,
+                  {{ imgOptimize(vite.static(slide.image), { w: 2400, q: 78 }) }} 2400w"
+          sizes="100vw"
+          alt="{{ slide.alt }}"
+          class="size-full object-cover object-center"
+          {{{ i === 0 ? 'fetchpriority="high"' : 'loading="lazy"' }}}
+          decoding="async"
+        />
+      @else
+        <div class="size-full {{ slide.bg }}" role="img" aria-label="{{ slide.alt }}"></div>
+        <div class="pointer-events-none absolute inset-0 grid place-items-center">
+          <span class="font-display text-[10px] uppercase tracking-label text-white/25">
+            placeholder — taruh static/hero/hero-0{{ i + 1 }}.jpg
+          </span>
+        </div>
+      @end
+
+      {{-- Scrim: berat di bawah agar caption tetap terbaca, plus wash atas untuk header transparan --}}
+      <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-ink/45"></div>
+      <div class="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-ink/55 to-transparent"></div>
+
+      {{-- Caption --}}
+      <div class="absolute inset-0 flex items-end">
+        <div class="mx-auto w-full max-w-350 px-5 pb-24 md:px-8 md:pb-28 lg:pb-32">
+          <div class="max-w-2xl">
+            <p class="font-display text-[11px] font-medium uppercase tracking-label text-brand">
+              <span class="mr-3 inline-block h-px w-8 align-middle bg-brand" aria-hidden="true"></span>{{ slide.eyebrow }}
+            </p>
+            <h1 class="mt-4 font-display text-4xl font-semibold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+              {{ slide.title }}
+            </h1>
+            <p class="mt-5 max-w-lg text-sm leading-relaxed text-white/75 sm:text-base">
+              {{ slide.subtitle }}
+            </p>
+            <a
+              href="{{ slide.ctaHref }}"
+              class="group mt-8 inline-flex items-center gap-3 bg-white px-7 py-3.5 font-display text-xs font-medium uppercase tracking-label text-ink transition-colors duration-300 hover:bg-brand hover:text-white"
+            >
+              {{ slide.ctaText }}
+              <iconify-icon icon="lucide:arrow-right" class="size-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"></iconify-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  @end
+
+  {{-- Panah + indikator: satu baris flex, panah nempel kiri, indikator didorong ke kanan via ml-auto --}}
+  @if(slides.length > 1)
+    <div class="absolute inset-x-5 bottom-8 z-30 flex items-center md:inset-x-8 lg:bottom-12">
+      <div class="hidden items-center gap-3 md:flex">
+        <button
+          type="button"
+          aria-label="Previous slide"
+          @click="prev()"
+          class="grid size-11 place-items-center rounded-full border border-white/25 text-white backdrop-blur-sm transition hover:border-white hover:bg-white hover:text-ink"
+        >
+          <iconify-icon icon="lucide:chevron-left" class="size-4" aria-hidden="true"></iconify-icon>
+        </button>
+        <button
+          type="button"
+          aria-label="Next slide"
+          @click="next()"
+          class="grid size-11 place-items-center rounded-full border border-white/25 text-white backdrop-blur-sm transition hover:border-white hover:bg-white hover:text-ink"
+        >
+          <iconify-icon icon="lucide:chevron-right" class="size-4" aria-hidden="true"></iconify-icon>
+        </button>
+      </div>
+
+      {{-- Indikator: mx-auto di mobile (panah tersembunyi, jadi otomatis center),
+           ml-auto dari md ke atas (didorong ke kanan, sejajar dengan panah di kiri) --}}
+      <div class="mx-auto flex items-center gap-2.5 md:mx-0 md:ml-auto">
+        @each((slide, i) in slides)
+          <button
+            type="button"
+            aria-label="Go to slide {{ i + 1 }}"
+            :aria-current="current === {{ i }} ? 'true' : 'false'"
+            @click="go({{ i }}); start()"
+            class="h-0.5 transition-all duration-500"
+            :class="current === {{ i }} ? 'w-10 bg-brand' : 'w-5 bg-white/40 hover:bg-white/70'"
+          ></button>
+        @end
+      </div>
+    </div>
+  @end
+
+  <p class="sr-only" aria-live="polite" x-text="`Slide ${current + 1} of ${count}`"></p>
+</section>

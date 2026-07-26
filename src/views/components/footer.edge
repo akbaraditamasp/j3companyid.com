@@ -1,0 +1,98 @@
+<footer class="bg-ink text-white">
+  <div class="mx-auto max-w-350 px-5 py-16 md:px-8 md:py-20">
+    <div class="grid grid-cols-2 gap-10 md:grid-cols-12 md:gap-8">
+
+      {{-- Brand + social --}}
+      <div class="col-span-2 md:col-span-4">
+        <a href="/" class="flex items-center gap-2.5 translate-y-1">
+          <img
+            src="{{ imgOptimize(vite.static('logo.png'), { w: 120 }) }}"
+            alt="J3 Company"
+            class="h-6 w-auto -translate-y-1"
+          />
+          <span class="-translate-y-1.5 font-display text-lg font-semibold uppercase leading-none tracking-wordmark text-white">
+            J3<span class="ml-1.5 font-light">Company</span>
+          </span>
+        </a>
+        <p class="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
+          Sepatu, apparel, dan aksesoris import premium, dikurasi langsung oleh tim J3 Company sejak 2019.
+        </p>
+        <div class="mt-6 flex items-center gap-3">
+          @each(social in [
+            { label: 'Instagram', icon: 'simple-icons:instagram', href: 'https://instagram.com' },
+            { label: 'TikTok', icon: 'simple-icons:tiktok', href: 'https://tiktok.com' },
+            { label: 'WhatsApp', icon: 'simple-icons:whatsapp', href: 'https://wa.me/6281234567890' },
+          ])
+            <a
+              href="{{ social.href }}"
+              aria-label="{{ social.label }}"
+              class="grid size-9 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-brand hover:text-brand"
+            >
+              <iconify-icon icon="{{ social.icon }}" class="size-4" aria-hidden="true"></iconify-icon>
+            </a>
+          @end
+        </div>
+      </div>
+
+      {{-- Shop links --}}
+      <div class="md:col-span-2">
+        <p class="font-display text-xs font-medium uppercase tracking-label text-white/40">Shop</p>
+        <ul class="mt-4 space-y-3 text-sm">
+          @each(link in [
+            { label: 'Work Boots', href: '/shop?category=work-boots' },
+            { label: 'Outerwear & Denim', href: '/shop?category=outerwear-denim' },
+            { label: 'Bags & Leather Goods', href: '/shop?category=bags-leather-goods' },
+            { label: 'All Products', href: '/shop' },
+          ])
+            <li><a href="{{ link.href }}" class="text-white/60 transition-colors hover:text-white">{{ link.label }}</a></li>
+          @end
+        </ul>
+      </div>
+
+      {{-- Company links --}}
+      <div class="md:col-span-2">
+        <p class="font-display text-xs font-medium uppercase tracking-label text-white/40">Company</p>
+        <ul class="mt-4 space-y-3 text-sm">
+          @each(link in [
+            { label: 'About Us', href: '/about' },
+            { label: 'The J3 Standard', href: '/standard' },
+            { label: 'Shipping & Returns', href: '/shipping-returns' },
+            { label: 'Contact', href: '/contact' },
+          ])
+            <li><a href="{{ link.href }}" class="text-white/60 transition-colors hover:text-white">{{ link.label }}</a></li>
+          @end
+        </ul>
+      </div>
+
+      {{-- Newsletter --}}
+      <div class="col-span-2 md:col-span-4">
+        <p class="font-display text-xs font-medium uppercase tracking-label text-white/40">Stay Updated</p>
+        <p class="mt-4 text-sm text-white/60">Info koleksi baru & drop terbatas, langsung ke inbox kamu.</p>
+        <form class="mt-4 flex items-center border-b border-white/25 transition-colors focus-within:border-white">
+          <input
+            type="email"
+            required
+            placeholder="Alamat email"
+            class="w-full bg-transparent py-2 text-sm text-white placeholder:text-white/40 focus:outline-none"
+          />
+          <button
+            type="submit"
+            aria-label="Subscribe"
+            class="grid size-9 shrink-0 place-items-center text-white/70 transition-colors hover:text-brand"
+          >
+            <iconify-icon icon="lucide:arrow-right" class="size-4" aria-hidden="true"></iconify-icon>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {{-- Bottom bar --}}
+    <div class="mt-14 flex flex-col gap-4 border-t border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
+      <p class="text-xs text-white/40">© {{ new Date().getFullYear() }} J3 Company. All rights reserved.</p>
+      <div class="flex items-center gap-6">
+        <a href="/privacy-policy" class="text-xs text-white/40 transition-colors hover:text-white">Privacy Policy</a>
+        <a href="/terms" class="text-xs text-white/40 transition-colors hover:text-white">Terms of Service</a>
+      </div>
+    </div>
+  </div>
+</footer>

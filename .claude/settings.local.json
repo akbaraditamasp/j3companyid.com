@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /tmp/home8.html -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(grep -n \"bg-brand px-2.5\\\\|>New<\\\\|>Limited<\" /tmp/home8.html)",
+      "Read(//tmp/**)"
+    ]
+  }
+}
