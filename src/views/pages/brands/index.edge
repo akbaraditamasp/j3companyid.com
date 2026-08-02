@@ -1,0 +1,61 @@
+{{--
+  Halaman listing semua brand — route /brands.
+--}}
+@component('layouts/main')
+  @slot('title')
+    Brands — J3 Company
+  @end
+
+  @slot('description')
+    Jelajahi brand-brand yang dikurasi langsung oleh J3 Company — Red Wing, RM Williams, Filson, dan lainnya.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(page = Number(query.page || 1))
+    @let(result = await brand.read({ sort: 'name', order: 'asc', limit: 24, page: page }))
+
+    {{-- Breadcrumb --}}
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="text-ink">Brands</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+      <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+        Brands
+      </h1>
+
+      @if(result.data.length === 0)
+        <div class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:tags" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Belum ada brand yang tersedia saat ini.</p>
+        </div>
+      @else
+        <div class="mt-10 grid grid-cols-2 gap-5 md:grid-cols-4">
+          @each(b in result.data)
+            <a href="/brands/{{ b.slug }}" class="group flex aspect-4/3 flex-col items-center justify-center gap-3 border border-ink-100 p-6 text-center transition-colors duration-300 hover:border-ink-300">
+              @if(b.logo?.url)
+                <img
+                  src="{{ imgOptimize(b.logo.url, { w: 320, q: 80 }) }}"
+                  alt="{{ b.name }}"
+                  class="max-h-16 w-auto max-w-full object-contain grayscale transition-all duration-300 group-hover:grayscale-0"
+                  loading="lazy"
+                  decoding="async"
+                />
+              @else
+                <span class="font-display text-lg font-medium uppercase tracking-wordmark text-ink-500">{{ b.name }}</span>
+              @end
+            </a>
+          @end
+        </div>
+
+        @!component('components/pagination', { meta: result.meta, basePath: '/brands' })
+      @end
+    </section>
+  @end
+@end

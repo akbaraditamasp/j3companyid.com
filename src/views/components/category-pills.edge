@@ -1,0 +1,26 @@
+{{--
+  Category pills — filter kategori dipakai di /shop dan /shop/category/:slug.
+
+  Props:
+    categories : array — hasil category.read().data
+    active     : string|null — slug kategori yang sedang aktif, null untuk "All Products"
+--}}
+@let(categories = $props.get('categories', []))
+@let(active = $props.get('active', null))
+
+<nav aria-label="Filter kategori" class="flex items-center gap-2 overflow-x-auto pb-1">
+  <a
+    href="/shop"
+    class="shrink-0 whitespace-nowrap border px-4 py-2 font-display text-[11px] font-medium uppercase tracking-label transition-colors duration-300 {{ active === null ? 'border-ink bg-ink text-white' : 'border-ink-100 text-ink-500 hover:border-ink-300 hover:text-ink' }}"
+  >
+    All Products
+  </a>
+  @each(cat in categories)
+    <a
+      href="/shop/category/{{ cat.slug }}"
+      class="shrink-0 whitespace-nowrap border px-4 py-2 font-display text-[11px] font-medium uppercase tracking-label transition-colors duration-300 {{ active === cat.slug ? 'border-ink bg-ink text-white' : 'border-ink-100 text-ink-500 hover:border-ink-300 hover:text-ink' }}"
+    >
+      {{ cat.name }}
+    </a>
+  @end
+</nav>

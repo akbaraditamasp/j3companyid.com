@@ -1,0 +1,140 @@
+{{--
+  Keranjang belanja — item-nya sepenuhnya client-side (localStorage via Alpine store
+  `cart`, lihat src/client/main.ts), makanya seluruh konten dibungkus x-cloak supaya
+  tidak kelihatan kosong sekilas sebelum Alpine jalan. `settings` (shippingNotice, dll)
+  tetap diambil server-side dari vars group `checkout` (src/vars/checkout.ts).
+--}}
+@component('layouts/main')
+  @slot('title')
+    Keranjang Belanja — J3 Company
+  @end
+
+  @slot('description')
+    Tinjau barang di keranjang belanja Anda sebelum checkout.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(settings = await checkout.get())
+
+    <div x-data="{}" x-cloak>
+      <div class="border-b border-ink-100">
+        <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+          <a href="/" class="transition-colors hover:text-ink">Home</a>
+          <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+          <span class="text-ink">Cart</span>
+        </div>
+      </div>
+
+      <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          Shopping Cart
+        </h1>
+
+        {{-- Empty state --}}
+        <div x-show="$store.cart.items.length === 0" class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:shopping-cart" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Keranjang belanja Anda masih kosong.</p>
+          <a
+            href="/shop"
+            class="inline-flex items-center gap-2 bg-ink px-6 py-3 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand"
+          >
+            Mulai Belanja
+            <iconify-icon icon="lucide:arrow-right" class="size-3.5 text-[0.875rem]" aria-hidden="true"></iconify-icon>
+          </a>
+        </div>
+
+        {{-- Cart contents --}}
+        <div x-show="$store.cart.items.length > 0" class="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-16">
+          <div class="divide-y divide-ink-100 border-t border-ink-100 lg:col-span-2">
+            <template x-for="item in $store.cart.items" :key="item.id">
+              <div class="flex gap-4 py-6 sm:gap-6">
+                <a :href="item.href" class="relative aspect-4/5 w-20 shrink-0 overflow-hidden bg-ink-100 sm:w-28">
+                  <template x-if="item.image">
+                    <img :src="item.image" :alt="item.name" class="size-full object-cover object-center" loading="lazy" decoding="async" />
+                  </template>
+                </a>
+
+                <div class="flex flex-1 flex-col justify-between">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <p class="font-display text-[10px] uppercase tracking-label text-ink-500" x-text="item.brand"></p>
+                      <a :href="item.href" class="mt-1 block font-display text-sm font-medium uppercase tracking-tight text-ink transition-colors hover:text-brand" x-text="item.name"></a>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="Hapus dari keranjang"
+                      @click="$store.cart.remove(item.id)"
+                      class="shrink-0 text-ink-300 transition-colors hover:text-brand"
+                    >
+                      <iconify-icon icon="lucide:x" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
+                    </button>
+                  </div>
+
+                  <div class="mt-4 flex items-center justify-between gap-4">
+                    <div class="flex items-center border border-ink-100">
+                      <button
+                        type="button"
+                        aria-label="Kurangi jumlah"
+                        @click="$store.cart.setQty(item.id, item.qty - 1)"
+                        class="grid size-8 place-items-center text-ink-700 transition-colors hover:bg-ink-100"
+                      >
+                        <iconify-icon icon="lucide:minus" class="size-3.5 text-[0.875rem]" aria-hidden="true"></iconify-icon>
+                      </button>
+                      <span class="w-8 text-center font-sans text-sm text-ink" x-text="item.qty"></span>
+                      <button
+                        type="button"
+                        aria-label="Tambah jumlah"
+                        @click="$store.cart.setQty(item.id, item.qty + 1)"
+                        class="grid size-8 place-items-center text-ink-700 transition-colors hover:bg-ink-100"
+                      >
+                        <iconify-icon icon="lucide:plus" class="size-3.5 text-[0.875rem]" aria-hidden="true"></iconify-icon>
+                      </button>
+                    </div>
+
+                    <span class="font-sans text-sm font-semibold text-ink" x-text="'Rp ' + (item.price * item.qty).toLocaleString('id-ID')"></span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <div class="pt-6">
+              <button
+                type="button"
+                @click="$store.cart.clear()"
+                class="font-display text-[11px] uppercase tracking-label text-ink-500 transition-colors hover:text-brand"
+              >
+                Kosongkan Keranjang
+              </button>
+            </div>
+          </div>
+
+          {{-- Summary --}}
+          <div class="h-fit border border-ink-100 p-6">
+            <h2 class="font-display text-xs font-medium uppercase tracking-label text-ink">Ringkasan</h2>
+            <div class="mt-5 flex items-center justify-between border-t border-ink-100 pt-5 text-sm">
+              <span class="text-ink-500">Subtotal</span>
+              <span class="font-semibold text-ink" x-text="'Rp ' + $store.cart.subtotal.toLocaleString('id-ID')"></span>
+            </div>
+            <p class="mt-2 text-xs text-ink-500">{{ settings.shippingNotice }}</p>
+
+            <a
+              href="/checkout"
+              class="mt-6 flex w-full items-center justify-center gap-2 bg-ink px-6 py-3.5 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand"
+            >
+              Lanjut ke Checkout
+            </a>
+
+            <a
+              href="/"
+              class="mt-4 flex items-center justify-center gap-2 font-display text-xs uppercase tracking-label text-ink-500 transition-colors hover:text-brand"
+            >
+              Lanjutkan Belanja
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  @end
+@end

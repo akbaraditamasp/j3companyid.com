@@ -1,0 +1,295 @@
+{{--
+  Checkout — sepenuhnya client-side untuk data keranjang (localStorage via Alpine
+  store `cart`, lihat src/client/main.ts), sama seperti cart.edge/wishlist.edge.
+
+  Alur: cari kota/kecamatan tujuan (GET /api/shipping/destinations, debounced) →
+  pilih hasil → otomatis ambil opsi ongkir (POST /api/shipping/quote) → pilih kurir
+  → submit ke POST /api/checkout (src/routes/checkout.ts). Ongkos kirim yang tampil
+  di sini HANYA untuk display — server selalu menghitung ulang harga & ongkir dari
+  data asli sebelum invoice Xendit dibuat, body submit cuma kirim destinationAreaId
+  + courier + service (bukan cost) supaya tidak ada nilai yang bisa dipalsukan.
+  Setelah submit sukses, keranjang langsung dikosongkan (order sudah tercatat,
+  terlepas dari status bayar) dan customer diarahkan ke /order/[orderNumber].edge —
+  BUKAN langsung ke halaman pembayaran Xendit — yang menampilkan detail pesanan +
+  tombol "Bayar Sekarang". success_redirect_url & failure_redirect_url Xendit
+  (diset saat bikin invoice) sama-sama mengarah balik ke halaman itu juga.
+--}}
+@component('layouts/main')
+  @slot('title')
+    Checkout — J3 Company
+  @end
+
+  @slot('description')
+    Selesaikan pesanan Anda di J3 Company.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(settings = await checkout.get())
+
+    <div
+      x-data="{
+        loading: false,
+        error: '',
+        form: { customerName: '', customerEmail: '', customerPhone: '', shippingAddress: '' },
+        destinationQuery: '',
+        destinationResults: [],
+        destination: null,
+        quotes: [],
+        quotesLoading: false,
+        selectedQuote: null,
+        cartItems() {
+          return $store.cart.items.map((i) => ({ slug: i.href.split('/').pop(), qty: i.qty }));
+        },
+        get total() {
+          return $store.cart.subtotal + (this.selectedQuote ? this.selectedQuote.cost : 0);
+        },
+        async searchDestination() {
+          if (this.destinationQuery.length < 3) { this.destinationResults = []; return; }
+          try {
+            const res = await fetch('/api/shipping/destinations?search=' + encodeURIComponent(this.destinationQuery) + '&limit=8');
+            const data = await res.json();
+            this.destinationResults = res.ok ? data.data : [];
+          } catch (e) {
+            this.destinationResults = [];
+          }
+        },
+        pickDestination(d) {
+          this.destination = d;
+          this.destinationQuery = d.label;
+          this.destinationResults = [];
+          this.selectedQuote = null;
+          this.fetchQuotes();
+        },
+        async fetchQuotes() {
+          if (!this.destination || $store.cart.items.length === 0) return;
+          this.quotesLoading = true;
+          this.quotes = [];
+          try {
+            const res = await fetch('/api/shipping/quote', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ destinationAreaId: this.destination.id, items: this.cartItems() }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              this.error = data.message || 'Gagal mengambil ongkos kirim.';
+              this.quotes = [];
+            } else {
+              this.quotes = data.data;
+            }
+          } catch (e) {
+            this.quotes = [];
+          } finally {
+            this.quotesLoading = false;
+          }
+        },
+        async submit() {
+          this.error = '';
+          if ($store.cart.items.length === 0) { this.error = 'Keranjang Anda kosong.'; return; }
+          if (!this.destination || !this.selectedQuote) { this.error = 'Pilih kota tujuan dan metode pengiriman terlebih dahulu.'; return; }
+          this.loading = true;
+          try {
+            const res = await fetch('/api/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...this.form,
+                destinationAreaId: this.destination.id,
+                destinationLabel: this.destination.label,
+                courier: this.selectedQuote.code,
+                service: this.selectedQuote.service,
+                items: this.cartItems(),
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              this.error = data.message || 'Gagal memproses checkout, silakan coba lagi.';
+              this.loading = false;
+              return;
+            }
+            $store.cart.clear();
+            window.location.href = '/order/' + data.orderNumber;
+          } catch (e) {
+            this.error = 'Terjadi kesalahan jaringan, silakan coba lagi.';
+            this.loading = false;
+          }
+        },
+      }"
+      x-cloak
+    >
+      <div class="border-b border-ink-100">
+        <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+          <a href="/" class="transition-colors hover:text-ink">Home</a>
+          <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+          <a href="/cart" class="transition-colors hover:text-ink">Cart</a>
+          <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+          <span class="text-ink">Checkout</span>
+        </div>
+      </div>
+
+      <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          Checkout
+        </h1>
+
+        @if(!settings.enabled)
+          <div class="mt-6 border border-ink-100 bg-bone px-5 py-4 text-sm text-ink-700">
+            Checkout sedang tidak tersedia saat ini. Silakan coba lagi nanti.
+          </div>
+        @end
+
+        {{-- Empty state --}}
+        <div x-show="$store.cart.items.length === 0" class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:shopping-cart" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Keranjang belanja Anda masih kosong.</p>
+          <a
+            href="/"
+            class="inline-flex items-center gap-2 bg-ink px-6 py-3 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand"
+          >
+            Mulai Belanja
+            <iconify-icon icon="lucide:arrow-right" class="size-3.5 text-[0.875rem]" aria-hidden="true"></iconify-icon>
+          </a>
+        </div>
+
+        {{-- Form + summary --}}
+        @if(settings.enabled)
+        <div x-show="$store.cart.items.length > 0" class="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-16">
+          <form @submit.prevent="submit()" class="space-y-6 lg:col-span-2">
+            <div>
+              <label class="font-display text-[11px] uppercase tracking-label text-ink-500" for="customerName">Nama Lengkap</label>
+              <input
+                id="customerName"
+                x-model="form.customerName"
+                required
+                type="text"
+                class="mt-2 w-full border border-ink-100 px-4 py-3 text-sm text-ink focus:border-ink focus:outline-none"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label class="font-display text-[11px] uppercase tracking-label text-ink-500" for="customerEmail">Email</label>
+                <input
+                  id="customerEmail"
+                  x-model="form.customerEmail"
+                  required
+                  type="email"
+                  class="mt-2 w-full border border-ink-100 px-4 py-3 text-sm text-ink focus:border-ink focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="font-display text-[11px] uppercase tracking-label text-ink-500" for="customerPhone">No. Telepon</label>
+                <input
+                  id="customerPhone"
+                  x-model="form.customerPhone"
+                  required
+                  type="tel"
+                  class="mt-2 w-full border border-ink-100 px-4 py-3 text-sm text-ink focus:border-ink focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="font-display text-[11px] uppercase tracking-label text-ink-500" for="shippingAddress">Alamat Pengiriman</label>
+              <textarea
+                id="shippingAddress"
+                x-model="form.shippingAddress"
+                required
+                rows="4"
+                class="mt-2 w-full border border-ink-100 px-4 py-3 text-sm text-ink focus:border-ink focus:outline-none"
+              ></textarea>
+              <p class="mt-2 text-xs text-ink-500">{{ settings.shippingNotice }}</p>
+            </div>
+
+            {{-- Destination autocomplete --}}
+            <div class="relative">
+              <label class="font-display text-[11px] uppercase tracking-label text-ink-500" for="destination">Kota/Kecamatan Tujuan</label>
+              <input
+                id="destination"
+                x-model="destinationQuery"
+                @input.debounce.400ms="searchDestination()"
+                @focus="if (destination) { destination = null; selectedQuote = null; quotes = [] }"
+                required
+                type="text"
+                autocomplete="off"
+                placeholder="mis. Kemayoran, Jakarta Pusat"
+                class="mt-2 w-full border border-ink-100 px-4 py-3 text-sm text-ink focus:border-ink focus:outline-none"
+              />
+              <div
+                x-show="destinationResults.length > 0"
+                class="absolute inset-x-0 top-full z-10 mt-1 max-h-64 overflow-y-auto border border-ink-100 bg-white shadow-lg"
+              >
+                <template x-for="d in destinationResults" :key="d.id">
+                  <button type="button" @click="pickDestination(d)" class="block w-full px-4 py-2.5 text-left text-sm text-ink-700 hover:bg-bone" x-text="d.label"></button>
+                </template>
+              </div>
+            </div>
+
+            {{-- Shipping quotes --}}
+            <div x-show="destination" class="space-y-3">
+              <p class="font-display text-[11px] uppercase tracking-label text-ink-500">Metode Pengiriman</p>
+              <div x-show="quotesLoading" class="text-sm text-ink-500">Memuat ongkos kirim...</div>
+              <div x-show="!quotesLoading && quotes.length === 0" class="text-sm text-ink-500">Tidak ada opsi pengiriman untuk tujuan ini.</div>
+              <template x-for="q in quotes" :key="q.code + q.service">
+                <button
+                  type="button"
+                  @click="selectedQuote = q"
+                  class="flex w-full items-center justify-between gap-4 border px-4 py-3 text-left text-sm transition-colors"
+                  :class="selectedQuote === q ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
+                >
+                  <div>
+                    <p class="font-medium text-ink" x-text="q.name + ' — ' + q.service"></p>
+                    <p class="text-xs text-ink-500" x-text="'Estimasi ' + q.etd + ' hari'"></p>
+                  </div>
+                  <span class="shrink-0 font-sans font-semibold text-ink" x-text="'Rp ' + q.cost.toLocaleString('id-ID')"></span>
+                </button>
+              </template>
+            </div>
+
+            <div x-show="error" x-text="error" class="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"></div>
+
+            <button
+              type="submit"
+              :disabled="loading || !destination || !selectedQuote"
+              class="flex w-full items-center justify-center gap-2 bg-ink px-6 py-3.5 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span x-show="!loading">Buat Pesanan</span>
+              <span x-show="loading">Memproses...</span>
+            </button>
+          </form>
+
+          {{-- Summary --}}
+          <div class="h-fit border border-ink-100 p-6">
+            <h2 class="font-display text-xs font-medium uppercase tracking-label text-ink">Ringkasan Pesanan</h2>
+            <div class="mt-5 divide-y divide-ink-100 border-t border-ink-100">
+              <template x-for="item in $store.cart.items" :key="item.id">
+                <div class="flex items-center justify-between gap-4 py-3 text-sm">
+                  <div class="min-w-0">
+                    <p class="truncate text-ink" x-text="item.name"></p>
+                    <p class="text-xs text-ink-500" x-text="'Qty ' + item.qty"></p>
+                  </div>
+                  <span class="shrink-0 font-sans text-ink" x-text="'Rp ' + (item.price * item.qty).toLocaleString('id-ID')"></span>
+                </div>
+              </template>
+            </div>
+            <div class="mt-5 flex items-center justify-between border-t border-ink-100 pt-5 text-sm">
+              <span class="text-ink-500">Subtotal</span>
+              <span class="font-semibold text-ink" x-text="'Rp ' + $store.cart.subtotal.toLocaleString('id-ID')"></span>
+            </div>
+            <div class="mt-2 flex items-center justify-between text-sm">
+              <span class="text-ink-500">Ongkos Kirim</span>
+              <span class="font-semibold text-ink" x-text="selectedQuote ? 'Rp ' + selectedQuote.cost.toLocaleString('id-ID') : '—'"></span>
+            </div>
+            <div class="mt-4 flex items-center justify-between border-t border-ink-100 pt-4">
+              <span class="font-display text-xs uppercase tracking-label text-ink">Total</span>
+              <span class="font-sans text-base font-semibold text-ink" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
+            </div>
+          </div>
+        </div>
+        @end
+      </section>
+    </div>
+  @end
+@end

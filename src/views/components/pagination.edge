@@ -1,0 +1,25 @@
+{{--
+  Pagination — dipakai di /shop dan /shop/category/:slug.
+
+  Props:
+    meta     : { page, pageCount } — dari hasil product.read()
+    basePath : string — mis. '/shop' atau '/shop/category/red-wing-boots'
+    query    : object — query string lain yang perlu dipertahankan saat pindah halaman, mis. { sort: 'price' } (opsional)
+--}}
+@let(meta = $props.get('meta'))
+@let(basePath = $props.get('basePath'))
+@let(extraQuery = $props.get('query', {}))
+
+@if(meta.pageCount > 1)
+  <div class="mt-12 flex flex-wrap items-center gap-2">
+    @each(p in Array.from({ length: meta.pageCount }, (_, i) => i + 1))
+      @let(qs = Object.entries({ ...extraQuery, page: p }).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&'))
+      <a
+        href="{{ basePath }}?{{ qs }}"
+        class="grid size-9 place-items-center font-display text-xs font-medium transition-colors duration-300 {{ p === meta.page ? 'bg-ink text-white' : 'text-ink-500 hover:bg-ink-100 hover:text-ink' }}"
+      >
+        {{ p }}
+      </a>
+    @end
+  </div>
+@end

@@ -1,0 +1,75 @@
+{{--
+  Halaman Shipping & Returns — route /shipping-returns. Konten statis, mengikuti
+  fakta yang sudah ada di sistem (BUKAN "free shipping" — src/vars/checkout.ts
+  shippingNotice default & src/routes/checkout.ts sama-sama mengonfirmasi ongkir
+  dihitung otomatis per kurir/tujuan dan ditambahkan ke total, bukan gratis).
+  Retur mengikuti sifat barang yang eksklusif satu unit per listing (lihat
+  komentar di src/models/product.ts / shop/[slug].edge) — jadi tidak ada
+  penukaran ukuran, hanya retur untuk refund.
+--}}
+@component('layouts/main')
+  @slot('title')
+    Shipping &amp; Returns — J3 Company
+  @end
+
+  @slot('description')
+    Kebijakan pengiriman, retur, dan penukaran J3 Company.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="text-ink">Shipping &amp; Returns</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-16 md:px-8 md:py-24">
+      <div class="mx-auto max-w-3xl">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          Shipping &amp; Returns
+        </h1>
+        <p class="mt-4 text-sm text-ink-500">Terakhir diperbarui: Agustus 2026</p>
+
+        <div class="mt-12 space-y-12">
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Pengiriman</h2>
+            <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-700">
+              <p>Setiap pesanan dikirim menggunakan salah satu kurir mitra kami — JNE, J&amp;T, atau SiCepat — sesuai pilihan Anda saat checkout.</p>
+              <p>Ongkos kirim dihitung otomatis berdasarkan berat produk dan kota tujuan, ditampilkan sebelum Anda menyelesaikan pembayaran. Tidak ada biaya tersembunyi yang ditambahkan setelahnya.</p>
+              <p>Estimasi waktu pengiriman mengikuti estimasi masing-masing kurir (biasanya 1–5 hari kerja untuk kota besar, lebih lama untuk luar Jawa) dan bisa Anda lihat saat memilih metode pengiriman di halaman checkout.</p>
+              <p>Setelah pesanan dibuat, status pengiriman dan detail kurir bisa dipantau kapan saja di halaman pesanan Anda (link dikirim setelah checkout berhasil).</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Retur &amp; Penukaran</h2>
+            <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-700">
+              <p>Barang yang dijual J3 Company sifatnya eksklusif — satu unit per listing, bukan varian ukuran/stok banyak. Karena itu kami <strong class="font-semibold text-ink">tidak melayani penukaran ukuran atau varian lain</strong> — begitu satu unit terjual, unit itu tidak tergantikan.</p>
+              <p>Anda tetap bisa mengajukan <strong class="font-semibold text-ink">retur untuk refund penuh dalam 14 hari</strong> sejak barang diterima, jika:</p>
+              <ul class="list-disc space-y-2 pl-5">
+                <li>Barang tidak sesuai dengan deskripsi atau foto di katalog.</li>
+                <li>Barang cacat produksi atau rusak saat pengiriman.</li>
+                <li>Barang terbukti tidak asli — lihat <a href="/standard" class="text-ink underline underline-offset-2 hover:text-brand">Garansi Keaslian di The J3 Standard</a>.</li>
+              </ul>
+              <p>Barang yang diretur harus dalam kondisi belum dipakai, lengkap dengan packaging aslinya. Retur di luar kondisi ini kami tolak.</p>
+              <p>Untuk mengajukan retur, hubungi kami lewat <a href="/contact" class="text-ink underline underline-offset-2 hover:text-brand">halaman Contact</a> dengan menyertakan nomor pesanan Anda. Setelah retur disetujui dan barang kami terima kembali, refund diproses dalam 3–7 hari kerja ke metode pembayaran asal.</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Butuh Bantuan?</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              Tim kami siap membantu soal status pengiriman atau proses retur — hubungi lewat
+              <a href="/contact" class="text-ink underline underline-offset-2 hover:text-brand">halaman Contact</a>
+              atau langsung via WhatsApp.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  @end
+@end

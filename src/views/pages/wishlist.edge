@@ -1,0 +1,86 @@
+{{--
+  Wishlist — sepenuhnya client-side (localStorage via Alpine store `wishlist`,
+  lihat src/client/main.ts). Tidak ada data dari server di halaman ini, jadi seluruh
+  konten dibungkus x-cloak supaya tidak kelihatan kosong sekilas sebelum Alpine jalan.
+--}}
+@component('layouts/main')
+  @slot('title')
+    Wishlist — J3 Company
+  @end
+
+  @slot('description')
+    Barang-barang yang Anda simpan untuk dilihat kembali nanti.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    <div x-data="{}" x-cloak>
+      <div class="border-b border-ink-100">
+        <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+          <a href="/" class="transition-colors hover:text-ink">Home</a>
+          <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+          <span class="text-ink">Wishlist</span>
+        </div>
+      </div>
+
+      <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          Wishlist
+        </h1>
+
+        {{-- Empty state --}}
+        <div x-show="$store.wishlist.items.length === 0" class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:heart" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Belum ada barang yang Anda simpan.</p>
+          <a
+            href="/shop"
+            class="inline-flex items-center gap-2 bg-ink px-6 py-3 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand"
+          >
+            Jelajahi Katalog
+            <iconify-icon icon="lucide:arrow-right" class="size-3.5 text-[0.875rem]" aria-hidden="true"></iconify-icon>
+          </a>
+        </div>
+
+        {{-- Wishlist grid --}}
+        <div x-show="$store.wishlist.items.length > 0" class="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+          <template x-for="item in $store.wishlist.items" :key="item.id">
+            <div class="group">
+              <div class="relative aspect-4/5 overflow-hidden bg-ink-100">
+                <button
+                  type="button"
+                  aria-label="Hapus dari wishlist"
+                  @click="$store.wishlist.remove(item.id)"
+                  class="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full bg-white/90 text-brand transition-colors hover:text-ink-700"
+                >
+                  <iconify-icon icon="lucide:x" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
+                </button>
+
+                <a :href="item.href" class="block size-full">
+                  <template x-if="item.image">
+                    <img :src="item.image" :alt="item.name" class="size-full object-cover object-center transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                  </template>
+                </a>
+
+                <button
+                  type="button"
+                  @click="$store.cart.add({ id: item.id, name: item.name, brand: item.brand, price: item.price, image: item.image, href: item.href })"
+                  class="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center gap-2 bg-white/95 px-4 py-3 font-display text-xs font-medium uppercase tracking-label text-ink backdrop-blur-sm transition-transform duration-300 group-hover:translate-y-0 hover:bg-ink hover:text-white"
+                >
+                  <iconify-icon icon="mdi:cart-outline" class="size-3.5 text-[0.875rem]" aria-hidden="true"></iconify-icon>
+                  <span x-text="$store.cart.has(item.id) ? 'In Cart' : 'Add to Cart'"></span>
+                </button>
+              </div>
+
+              <div class="mt-4">
+                <p class="font-display text-[11px] uppercase tracking-label text-ink-500" x-text="item.brand"></p>
+                <a :href="item.href" class="mt-1 block font-display text-sm font-medium uppercase tracking-tight text-ink transition-colors hover:text-brand" x-text="item.name"></a>
+                <p class="mt-2 font-sans text-sm font-semibold text-ink" x-text="'Rp ' + item.price.toLocaleString('id-ID')"></p>
+              </div>
+            </div>
+          </template>
+        </div>
+      </section>
+    </div>
+  @end
+@end

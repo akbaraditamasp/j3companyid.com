@@ -28,7 +28,7 @@
               aria-label="{{ social.label }}"
               class="grid size-9 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-brand hover:text-brand"
             >
-              <iconify-icon icon="{{ social.icon }}" class="size-4" aria-hidden="true"></iconify-icon>
+              <iconify-icon icon="{{ social.icon }}" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
             </a>
           @end
         </div>
@@ -38,14 +38,11 @@
       <div class="md:col-span-2">
         <p class="font-display text-xs font-medium uppercase tracking-label text-white/40">Shop</p>
         <ul class="mt-4 space-y-3 text-sm">
-          @each(link in [
-            { label: 'Work Boots', href: '/shop?category=work-boots' },
-            { label: 'Outerwear & Denim', href: '/shop?category=outerwear-denim' },
-            { label: 'Bags & Leather Goods', href: '/shop?category=bags-leather-goods' },
-            { label: 'All Products', href: '/shop' },
-          ])
-            <li><a href="{{ link.href }}" class="text-white/60 transition-colors hover:text-white">{{ link.label }}</a></li>
+          @let(footerCategories = await category.read({ limit: 3, sort: 'createdAt', order: 'asc' }))
+          @each(cat in footerCategories.data)
+            <li><a href="/shop/category/{{ cat.slug }}" class="text-white/60 transition-colors hover:text-white">{{ cat.name }}</a></li>
           @end
+          <li><a href="/shop" class="text-white/60 transition-colors hover:text-white">All Products</a></li>
         </ul>
       </div>
 
@@ -80,7 +77,7 @@
             aria-label="Subscribe"
             class="grid size-9 shrink-0 place-items-center text-white/70 transition-colors hover:text-brand"
           >
-            <iconify-icon icon="lucide:arrow-right" class="size-4" aria-hidden="true"></iconify-icon>
+            <iconify-icon icon="lucide:arrow-right" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
           </button>
         </form>
       </div>

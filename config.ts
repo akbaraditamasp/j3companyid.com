@@ -17,7 +17,19 @@ export default defineConfig({
     file: bunFilesystemAdapter({ dir: "./uploads" }),
   },
   models: [
-    // Register your models here, e.g.:
-    // () => import("./src/models/post"),
+    () => import("./src/models/brand"),
+    () => import("./src/models/category"),
+    () => import("./src/models/product"),
+    () => import("./src/models/order"),
+    () => import("./src/models/contact-message"),
+  ],
+  routes: [
+    () => import("./src/routes/checkout"),
+    () => import("./src/routes/shipping"),
+    () => import("./src/routes/contact"),
+  ],
+  vars: [
+    () => import("./src/vars/checkout"),
+    () => import("./src/vars/shipping"),
   ],
 });

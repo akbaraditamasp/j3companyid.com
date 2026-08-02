@@ -1,0 +1,94 @@
+{{--
+  Halaman Terms of Service — route /terms. Konten statis, merujuk ke fakta sistem
+  yang sebenarnya (checkout via Xendit, ongkir dihitung otomatis, barang satu
+  unit eksklusif, retur 14 hari di /shipping-returns, garansi keaslian di
+  /standard) — bukan boilerplate generik yang tidak nyambung dengan situs ini.
+--}}
+@component('layouts/main')
+  @slot('title')
+    Terms of Service — J3 Company
+  @end
+
+  @slot('description')
+    Syarat dan ketentuan penggunaan layanan J3 Company.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="text-ink">Terms of Service</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-16 md:px-8 md:py-24">
+      <div class="mx-auto max-w-3xl">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          Terms of Service
+        </h1>
+        <p class="mt-4 text-sm text-ink-500">Terakhir diperbarui: Agustus 2026</p>
+
+        <div class="mt-12 space-y-12">
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Penerimaan Ketentuan</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              Dengan mengakses dan menggunakan situs J3 Company, Anda menyetujui syarat dan ketentuan berikut. Jika Anda tidak setuju, mohon tidak melanjutkan penggunaan layanan kami.
+            </p>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Produk &amp; Harga</h2>
+            <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-700">
+              <p>Seluruh harga ditampilkan dalam Rupiah (IDR) dan sudah final kecuali ongkos kirim yang dihitung terpisah saat checkout.</p>
+              <p>Barang yang dijual bersifat eksklusif — satu unit per listing, bukan varian ukuran/stok banyak. Begitu terjual, listing tersebut tidak lagi tersedia dan bisa hilang dari katalog kapan saja tanpa pemberitahuan sebelumnya.</p>
+              <p>Kami berusaha menampilkan foto dan deskripsi produk seakurat mungkin, namun warna aktual bisa sedikit berbeda tergantung pengaturan layar perangkat Anda.</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Pemesanan &amp; Pembayaran</h2>
+            <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-700">
+              <p>Pesanan diproses setelah data checkout Anda lengkap dan invoice pembayaran berhasil dibuat melalui mitra pembayaran kami, Xendit. Pesanan dianggap sah setelah pembayaran dikonfirmasi.</p>
+              <p>Status dan detail pesanan Anda bisa dipantau kapan saja lewat halaman pesanan yang tautannya diberikan setelah checkout berhasil.</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Pengiriman, Retur &amp; Garansi</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              Ketentuan lengkap soal ongkos kirim, retur, dan penukaran ada di halaman
+              <a href="/shipping-returns" class="text-ink underline underline-offset-2 hover:text-brand">Shipping &amp; Returns</a>.
+              Komitmen kami soal keaslian produk dijelaskan di halaman
+              <a href="/standard" class="text-ink underline underline-offset-2 hover:text-brand">The J3 Standard</a>.
+            </p>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Batasan Tanggung Jawab</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              J3 Company tidak bertanggung jawab atas keterlambatan pengiriman yang disebabkan oleh pihak kurir, atau kerugian tidak langsung yang timbul dari penggunaan situs ini di luar kendali kami yang wajar.
+            </p>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Perubahan Ketentuan</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              Kami dapat memperbarui ketentuan ini sewaktu-waktu. Perubahan berlaku sejak dipublikasikan di halaman ini, ditandai lewat tanggal "Terakhir diperbarui" di atas.
+            </p>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Kontak</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              Pertanyaan soal ketentuan ini bisa disampaikan lewat
+              <a href="/contact" class="text-ink underline underline-offset-2 hover:text-brand">halaman Contact</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  @end
+@end

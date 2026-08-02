@@ -1,0 +1,98 @@
+{{--
+  Halaman listing produk per kategori — route /shop/category/:slug.
+
+  PENTING: setiap @slot dikompilasi jadi fungsi terpisah — @let di satu slot
+  tidak terlihat di slot lain, makanya slot title melakukan category.read()
+  sendiri (query kedua, ringan) untuk dapat nama kategori asli.
+
+  Filter produk butuh id kategori (record relation), bukan slug — tidak ada
+  auto-resolve slug->id di product.read(), jadi kategori di-resolve dulu.
+--}}
+@component('layouts/main')
+  @slot('title')
+    @let(titleResult = await category.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(titleCategory = titleResult.data[0])
+    @if(!titleCategory)
+      Kategori Tidak Ditemukan — J3 Company
+    @else
+      {{ titleCategory.name }} — J3 Company
+    @end
+  @end
+
+  @slot('description')
+    Jelajahi koleksi produk J3 Company berdasarkan kategori.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(categoryResult = await category.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(cat = categoryResult.data[0])
+    @if(!cat)
+      {{ abort(404) }}
+    @end
+
+    @let(sortParam = ['newest', 'price-asc', 'price-desc'].includes(query.sort) ? query.sort : 'newest')
+    @let(sortMap = { newest: { sort: 'createdAt', order: 'desc' }, 'price-asc': { sort: 'price', order: 'asc' }, 'price-desc': { sort: 'price', order: 'desc' } })
+    @let(sortConfig = sortMap[sortParam])
+    @let(page = Number(query.page || 1))
+
+    @let(categoriesResult = await category.read({ limit: 100, sort: 'name', order: 'asc' }))
+    @let(result = await product.read({
+      filters: { category: { $eq: cat.id }, status: { $eq: 'PUBLISH' } },
+      sort: sortConfig.sort,
+      order: sortConfig.order,
+      limit: 12,
+      page: page,
+      populate: ['brand', 'thumbnail'],
+    }))
+
+    {{-- Breadcrumb --}}
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 overflow-x-auto px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="shrink-0 transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 shrink-0 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <a href="/shop" class="shrink-0 transition-colors hover:text-ink">Shop</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 shrink-0 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="shrink-0 text-ink">{{ cat.name }}</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+      <div class="flex items-end justify-between gap-8">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          {{ cat.name }}
+        </h1>
+
+        <select
+          x-data
+          @change="window.location.href = '/shop/category/{{ cat.slug }}?sort=' + $event.target.value"
+          class="border border-ink-100 bg-white px-3 py-2 font-display text-[11px] uppercase tracking-label text-ink-700"
+        >
+          <option value="newest" {{{ sortParam === 'newest' ? 'selected' : '' }}}>Terbaru</option>
+          <option value="price-asc" {{{ sortParam === 'price-asc' ? 'selected' : '' }}}>Harga Terendah</option>
+          <option value="price-desc" {{{ sortParam === 'price-desc' ? 'selected' : '' }}}>Harga Tertinggi</option>
+        </select>
+      </div>
+
+      <div class="mt-6">
+        @!component('components/category-pills', { categories: categoriesResult.data, active: cat.slug })
+      </div>
+
+      @if(result.data.length === 0)
+        <div class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:package-search" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Belum ada produk di kategori ini.</p>
+        </div>
+      @else
+        <div class="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+          @each(item in result.data)
+            @!component('components/product-card', { product: item })
+          @end
+        </div>
+
+        @!component('components/pagination', { meta: result.meta, basePath: '/shop/category/' + cat.slug, query: { sort: sortParam } })
+      @end
+    </section>
+  @end
+@end

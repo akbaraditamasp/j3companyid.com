@@ -1,0 +1,239 @@
+{{--
+  Halaman detail produk — data dari model `product` (src/models/product.ts).
+
+  Barang yang dijual J3 Company sifatnya eksklusif — satu unit per listing,
+  bukan varian ukuran/stok banyak. Makanya tidak ada pemilih ukuran/qty di sini;
+  ukuran aktual barang itu sendiri cukup jadi salah satu baris di `specs`.
+
+  PENTING: setiap @slot di dalam @component dikompilasi jadi fungsi terpisah —
+  @let yang dideklarasikan di satu slot TIDAK terlihat di slot lain. Makanya slot
+  title melakukan `product.show()` sendiri (query kedua, ringan) supaya judul
+  <title> bisa pakai nama produk asli, bukan cuma slug yang dikapitalisasi.
+
+  Nama variabel lokal sengaja `item`, BUKAN `product` — `product` adalah model
+  global (product.show/product.read); kalau dipakai sebagai nama variabel lokal
+  juga, itu akan menutupi (shadow) model global-nya di scope yang sama.
+--}}
+@component('layouts/main')
+  @slot('title')
+    {{-- product.show(id) looks up by record id, not by our separate `slug` field —
+         has to go through read({ filters: { slug } }) instead. --}}
+    @let(titleResult = await product.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(titleItem = titleResult.data[0])
+    @if(!titleItem)
+      Produk Tidak Ditemukan — J3 Company
+    @else
+      {{ titleItem.brand?.name }} {{ titleItem.name }} — J3 Company
+    @end
+  @end
+
+  @slot('description')
+    Detail produk sepatu, apparel, dan aksesoris import premium dari J3 Company — dikurasi langsung sejak 2019.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(result = await product.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(item = result.data[0])
+    @if(!item)
+      {{ abort(404) }}
+    @end
+
+    @let(imageUrls = [item.thumbnail?.url, ...(item.gallery || []).map((g) => g.url)].filter((u) => u))
+    @let(relatedResult = await product.read({ filters: { status: { $eq: 'PUBLISH' } }, limit: 5, sort: 'createdAt', order: 'desc', populate: ['brand', 'thumbnail'] }))
+    @let(related = relatedResult.data.filter((p) => p.id.toString() !== item.id.toString()).slice(0, 4))
+
+    {{-- Breadcrumb --}}
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 overflow-x-auto px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="shrink-0 transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 shrink-0 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <a href="/shop" class="shrink-0 transition-colors hover:text-ink">Shop</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 shrink-0 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <a href="/shop/category/{{ item.category?.slug }}" class="shrink-0 transition-colors hover:text-ink">{{ item.category?.name }}</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 shrink-0 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="shrink-0 text-ink">{{ item.name }}</span>
+      </div>
+    </div>
+
+    {{-- Gallery + info --}}
+    <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+      <div class="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
+
+        {{-- Gallery --}}
+        <div x-data="{ active: 0 }" class="flex flex-col-reverse gap-4 sm:flex-row">
+          <div class="flex shrink-0 gap-3 overflow-x-auto sm:w-20 sm:flex-col sm:overflow-visible">
+            @each((img, i) in imageUrls)
+              <button
+                type="button"
+                aria-label="Lihat foto {{ i + 1 }}"
+                @click="active = {{ i }}"
+                class="relative aspect-square w-16 shrink-0 overflow-hidden border transition-colors sm:w-full"
+                :class="active === {{ i }} ? 'border-ink' : 'border-ink-100 hover:border-ink-300'"
+              >
+                <img
+                  src="{{ imgOptimize(img, { w: 160, q: 70 }) }}"
+                  alt="{{ item.brand?.name }} {{ item.name }} — foto {{ i + 1 }}"
+                  class="size-full object-cover object-center"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
+            @end
+          </div>
+
+          <div class="relative aspect-4/5 flex-1 overflow-hidden bg-ink-100">
+            @if(item.badge)
+              <span class="absolute left-3 top-3 z-10 bg-brand px-2.5 py-1 font-display text-[10px] font-medium uppercase tracking-label text-white">
+                {{ item.badge }}
+              </span>
+            @end
+
+            @if(imageUrls.length)
+              @each((img, i) in imageUrls)
+                <div x-show="active === {{ i }}" x-transition.opacity.duration.300ms class="absolute inset-0">
+                  <img
+                    src="{{ imgOptimize(img, { w: 800, q: 80 }) }}"
+                    srcset="{{ imgOptimize(img, { w: 480, q: 76 }) }} 480w,
+                            {{ imgOptimize(img, { w: 800, q: 80 }) }} 800w,
+                            {{ imgOptimize(img, { w: 1200, q: 80 }) }} 1200w"
+                    sizes="(min-width: 1024px) 42vw, 100vw"
+                    alt="{{ item.brand?.name }} {{ item.name }}"
+                    class="size-full object-cover object-center"
+                    {{{ i === 0 ? 'fetchpriority="high"' : 'loading="lazy"' }}}
+                    decoding="async"
+                  />
+                </div>
+              @end
+            @else
+              <div class="grid size-full place-items-center p-4 text-center">
+                <span class="font-display text-[10px] uppercase tracking-label text-ink-300">
+                  Belum ada foto
+                </span>
+              </div>
+            @end
+          </div>
+        </div>
+
+        {{-- Info --}}
+        <div>
+          <p class="font-display text-[11px] uppercase tracking-label text-ink-500">{{ item.brand?.name }}</p>
+          <h1 class="mt-2 font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+            {{ item.name }}
+          </h1>
+
+          <div class="mt-4 flex items-center gap-3">
+            <div class="flex items-center gap-1 text-brand">
+              @each(i in Array.from({ length: item.rating }))
+                <iconify-icon icon="mdi:star" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
+              @end
+            </div>
+            <span class="text-xs text-ink-500">{{ item.reviewCount }} ulasan</span>
+          </div>
+
+          <div class="mt-5 flex items-center gap-3">
+            <span class="font-sans text-2xl font-semibold text-ink">Rp {{ item.price.toLocaleString('id-ID') }}</span>
+            @if(item.compareAtPrice)
+              <span class="font-sans text-base text-ink-300 line-through">Rp {{ item.compareAtPrice.toLocaleString('id-ID') }}</span>
+            @end
+          </div>
+
+          <div class="mt-6 text-sm leading-relaxed text-ink-700">{{{ item.description }}}</div>
+
+          {{-- Barang eksklusif, satu unit — jadi cukup Add to Cart + wishlist, tanpa pilihan ukuran/qty --}}
+          @let(pdImage = item.thumbnail?.url ? imgOptimize(item.thumbnail.url, { w: 300, q: 75 }) : '')
+          @let(pdItem = { id: '/shop/' + item.slug, name: item.name, brand: item.brand?.name, price: item.price, image: pdImage, href: '/shop/' + item.slug })
+          <div x-data="{ id: '{{ pdItem.id }}' }" class="mt-8 flex items-center gap-3 border-t border-ink-100 pt-8">
+            <button
+              type="button"
+              @click="$store.cart.add({{ JSON.stringify(pdItem) }})"
+              class="flex flex-1 items-center justify-center gap-2 bg-ink px-6 py-3.5 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand"
+            >
+              <iconify-icon icon="mdi:cart-outline" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
+              <span x-text="$store.cart.has(id) ? 'Added to Cart' : 'Add to Cart'"></span>
+            </button>
+
+            <button
+              type="button"
+              aria-label="Add to wishlist"
+              @click="$store.wishlist.toggle({{ JSON.stringify(pdItem) }})"
+              class="grid size-12.5 shrink-0 place-items-center border transition-colors"
+              :class="$store.wishlist.has(id) ? 'border-brand text-brand' : 'border-ink-100 text-ink-700 hover:border-brand hover:text-brand'"
+            >
+              <iconify-icon :icon="$store.wishlist.has(id) ? 'mdi:heart' : 'lucide:heart'" class="size-4.5 text-[1.125rem]" aria-hidden="true"></iconify-icon>
+            </button>
+          </div>
+
+          {{-- Meta --}}
+          <dl class="mt-8 grid grid-cols-2 gap-y-3 border-t border-ink-100 pt-6 text-sm sm:grid-cols-3">
+            <div>
+              <dt class="font-display text-[10px] uppercase tracking-label text-ink-500">SKU</dt>
+              <dd class="mt-1 text-ink">{{ item.sku }}</dd>
+            </div>
+            <div>
+              <dt class="font-display text-[10px] uppercase tracking-label text-ink-500">Kategori</dt>
+              <dd class="mt-1 text-ink">{{ item.category?.name }}</dd>
+            </div>
+            <div>
+              <dt class="font-display text-[10px] uppercase tracking-label text-ink-500">Ketersediaan</dt>
+              <dd class="mt-1 flex items-center gap-1.5 text-ink">
+                <iconify-icon icon="lucide:check" class="size-3.5 text-[0.875rem] text-brand" aria-hidden="true"></iconify-icon>
+                {{ item.availability }}
+              </dd>
+            </div>
+          </dl>
+
+          {{-- Trust badges --}}
+          <div class="mt-8 grid grid-cols-3 gap-4 border-t border-ink-100 pt-6">
+            @each(trust in [
+              { icon: 'lucide:truck', label: 'Free Shipping' },
+              { icon: 'lucide:badge-check', label: 'Garansi Keaslian' },
+              { icon: 'lucide:rotate-ccw', label: 'Retur 14 Hari' },
+            ])
+              <div class="flex flex-col items-center gap-2 text-center">
+                <iconify-icon icon="{{ trust.icon }}" class="size-5 text-[1.25rem] text-ink-500" aria-hidden="true"></iconify-icon>
+                <span class="font-display text-[10px] uppercase tracking-label text-ink-500">{{ trust.label }}</span>
+              </div>
+            @end
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {{-- Specifications — daftar label/value dinamis, gampang diedit admin per baris --}}
+    <section class="mx-auto max-w-350 px-5 pb-20 md:px-8 md:pb-28">
+      <div class="mx-auto max-w-3xl">
+        <h2 class="font-display text-xs font-medium uppercase tracking-label text-ink">Specifications</h2>
+        <dl class="mt-4 divide-y divide-ink-100 border-t border-ink-100">
+          @each(spec in item.specs)
+            <div class="flex items-center justify-between gap-6 py-3.5 text-sm">
+              <dt class="font-display text-[11px] uppercase tracking-label text-ink-500">{{ spec.label }}</dt>
+              <dd class="text-right text-ink">{{ spec.value }}</dd>
+            </div>
+          @end
+        </dl>
+      </div>
+    </section>
+
+    {{-- Related products --}}
+    @if(related.length)
+      <section class="mx-auto max-w-350 px-5 pb-20 md:px-8 md:pb-28">
+        <div class="flex items-end justify-between gap-8 border-b border-ink-100 pb-6">
+          <h2 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+            You May Also Like
+          </h2>
+          <a href="/shop" class="hidden shrink-0 font-display text-xs uppercase tracking-label text-ink-500 transition-colors hover:text-brand sm:block">
+            View all
+          </a>
+        </div>
+
+        <div class="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+          @each(rel in related)
+            @!component('components/product-card', { product: rel })
+          @end
+        </div>
+      </section>
+    @end
+  @end
+@end

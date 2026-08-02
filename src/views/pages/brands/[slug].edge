@@ -1,0 +1,91 @@
+{{--
+  Halaman detail brand + produknya — route /brands/:slug.
+
+  PENTING: setiap @slot dikompilasi jadi fungsi terpisah — @let di satu slot
+  tidak terlihat di slot lain, makanya slot title melakukan brand.read()
+  sendiri (query kedua, ringan) untuk dapat nama brand asli.
+
+  Filter produk butuh id brand (record relation), bukan slug — tidak ada
+  auto-resolve slug->id di product.read(), jadi brand di-resolve dulu
+  (pola yang sama seperti src/views/pages/shop/category/[slug].edge).
+--}}
+@component('layouts/main')
+  @slot('title')
+    @let(titleResult = await brand.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(titleBrand = titleResult.data[0])
+    @if(!titleBrand)
+      Brand Tidak Ditemukan — J3 Company
+    @else
+      {{ titleBrand.name }} — J3 Company
+    @end
+  @end
+
+  @slot('description')
+    Jelajahi koleksi produk J3 Company dari brand ini.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(brandResult = await brand.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(b = brandResult.data[0])
+    @if(!b)
+      {{ abort(404) }}
+    @end
+
+    @let(page = Number(query.page || 1))
+    @let(result = await product.read({
+      filters: { brand: { $eq: b.id }, status: { $eq: 'PUBLISH' } },
+      sort: 'createdAt',
+      order: 'desc',
+      limit: 12,
+      page: page,
+      populate: ['brand', 'thumbnail'],
+    }))
+
+    {{-- Breadcrumb --}}
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 overflow-x-auto px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="shrink-0 transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 shrink-0 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <a href="/brands" class="shrink-0 transition-colors hover:text-ink">Brands</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 shrink-0 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="shrink-0 text-ink">{{ b.name }}</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+      <div class="flex items-center gap-5">
+        @if(b.logo?.url)
+          <div class="flex size-20 shrink-0 items-center justify-center border border-ink-100 p-3">
+            <img
+              src="{{ imgOptimize(b.logo.url, { w: 200, q: 80 }) }}"
+              alt="{{ b.name }}"
+              class="max-h-full w-auto max-w-full object-contain"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        @end
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          {{ b.name }}
+        </h1>
+      </div>
+
+      @if(result.data.length === 0)
+        <div class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:package-search" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Belum ada produk dari brand ini.</p>
+        </div>
+      @else
+        <div class="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+          @each(item in result.data)
+            @!component('components/product-card', { product: item })
+          @end
+        </div>
+
+        @!component('components/pagination', { meta: result.meta, basePath: '/brands/' + b.slug })
+      @end
+    </section>
+  @end
+@end

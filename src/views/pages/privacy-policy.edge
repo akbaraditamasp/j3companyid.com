@@ -1,0 +1,89 @@
+{{--
+  Halaman Privacy Policy — route /privacy-policy. Konten statis, ditulis
+  berdasarkan perilaku sistem yang sebenarnya (bukan boilerplate generik):
+  - Data checkout (order model: customerName/Email/Phone/shippingAddress).
+  - Data form contact (contactMessage model).
+  - Analytics bawaan njin melacak pageview otomatis, tapi IP pengunjung TIDAK
+    pernah disimpan — hanya negara hasil resolve + hash harian untuk hitung
+    unique visitor (lihat "Analytics" di CLAUDE.md API reference).
+  - Cart/wishlist tersimpan di localStorage browser, bukan di server (lihat
+    komentar di cart.edge/wishlist.edge).
+--}}
+@component('layouts/main')
+  @slot('title')
+    Privacy Policy — J3 Company
+  @end
+
+  @slot('description')
+    Bagaimana J3 Company mengumpulkan, menggunakan, dan melindungi data Anda.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="text-ink">Privacy Policy</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-16 md:px-8 md:py-24">
+      <div class="mx-auto max-w-3xl">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          Privacy Policy
+        </h1>
+        <p class="mt-4 text-sm text-ink-500">Terakhir diperbarui: Agustus 2026</p>
+
+        <div class="mt-12 space-y-12">
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Data yang Kami Kumpulkan</h2>
+            <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-700">
+              <p><strong class="font-semibold text-ink">Data pesanan</strong> — saat checkout, kami menyimpan nama, email, nomor telepon, dan alamat pengiriman Anda untuk memproses pesanan.</p>
+              <p><strong class="font-semibold text-ink">Data kontak</strong> — kalau Anda mengirim pesan lewat halaman Contact, kami menyimpan nama, email, nomor telepon (jika diisi), dan isi pesan Anda.</p>
+              <p><strong class="font-semibold text-ink">Data analitik</strong> — kami mencatat kunjungan halaman secara otomatis untuk keperluan statistik. Alamat IP Anda <strong class="font-semibold text-ink">tidak pernah disimpan</strong> — yang kami simpan hanya negara asal kunjungan dan sebuah hash acak yang berganti setiap hari (dipakai untuk menghitung jumlah pengunjung unik, bukan untuk mengidentifikasi Anda secara personal).</p>
+              <p><strong class="font-semibold text-ink">Keranjang &amp; wishlist</strong> — daftar belanja dan wishlist Anda tersimpan di browser perangkat Anda sendiri (localStorage), bukan di server kami. Kami tidak punya akses ke data ini sampai Anda benar-benar checkout.</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Bagaimana Data Digunakan</h2>
+            <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-700">
+              <p>Data yang Anda berikan digunakan untuk: memproses dan mengirim pesanan, menghitung ongkos kirim, memproses pembayaran, merespons pertanyaan atau keluhan Anda, dan memahami performa katalog kami secara agregat (analitik).</p>
+              <p>Kami tidak menjual atau menyewakan data pribadi Anda ke pihak mana pun untuk kepentingan pemasaran.</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Pihak Ketiga</h2>
+            <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-700">
+              <p>Untuk memproses transaksi, kami membagikan data seperlunya ke:</p>
+              <ul class="list-disc space-y-2 pl-5">
+                <li><strong class="font-semibold text-ink">Xendit</strong> — penyedia layanan pembayaran, menerima data pesanan (nama, email, jumlah tagihan) untuk membuat invoice pembayaran.</li>
+                <li><strong class="font-semibold text-ink">RajaOngkir (Komerce)</strong> — layanan kalkulasi ongkos kirim, menerima data tujuan pengiriman dan berat paket untuk menghitung tarif kurir.</li>
+              </ul>
+              <p>Kedua pihak ini hanya menerima data yang relevan untuk fungsi masing-masing, dan tunduk pada kebijakan privasi mereka sendiri.</p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Hak Anda</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              Anda berhak meminta akses, koreksi, atau penghapusan data pribadi Anda yang tersimpan di sistem kami. Hubungi kami lewat
+              <a href="/contact" class="text-ink underline underline-offset-2 hover:text-brand">halaman Contact</a>
+              untuk mengajukan permintaan ini.
+            </p>
+          </div>
+
+          <div>
+            <h2 class="font-display text-lg font-semibold uppercase tracking-tight text-ink">Perubahan Kebijakan</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-700">
+              Kebijakan privasi ini bisa kami perbarui sewaktu-waktu mengikuti perubahan layanan kami. Perubahan akan tercermin lewat tanggal "Terakhir diperbarui" di atas.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  @end
+@end

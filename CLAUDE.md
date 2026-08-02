@@ -426,6 +426,37 @@ Tailwind v4 — utility classes, no config file. Alpine.js v3 — inline directi
 
 Add custom JavaScript/CSS in `src/client/main.ts` and `src/client/app.css`.
 
+### Icons (`iconify-icon`)
+
+Icons are the `<iconify-icon icon="...">` web component (`iconify-icon` npm package, loaded via `src/client/main.ts`).
+
+**Gotcha: Tailwind `size-*`/`w-*`/`h-*` classes alone do NOT resize the icon glyph.** `iconify-icon` renders its SVG relative to **`font-size`** (like a font icon — default is `1em`), not CSS `width`/`height`. Setting only `class="size-7"` changes the host element's box but the rendered icon inside stays at the default ~1em regardless — confirmed by rendering the component in isolation and comparing computed sizes.
+
+**Fix:** always pair the sizing class with an arbitrary `text-[Xrem]` font-size utility set to the same value, e.g.:
+
+```edge
+{{-- Wrong — icon stays default size no matter what size-N says --}}
+<iconify-icon icon="lucide:heart" class="size-7"></iconify-icon>
+
+{{-- Right — text-[Xrem] actually controls the rendered glyph size --}}
+<iconify-icon icon="lucide:heart" class="size-7 text-[1.75rem]"></iconify-icon>
+```
+
+Keep the `size-N` class too (it still sizes the host's layout box for flex/grid gap math) — just make sure a matching `text-[Xrem]` is always present alongside it. Quick reference (`size-N` = `N * 0.25rem`):
+
+| `size-N` | `text-[…]` |
+| -------- | ---------- |
+| `size-3` | `text-[0.75rem]` |
+| `size-3.5` | `text-[0.875rem]` |
+| `size-4` | `text-[1rem]` |
+| `size-4.5` | `text-[1.125rem]` |
+| `size-5` | `text-[1.25rem]` |
+| `size-6` | `text-[1.5rem]` |
+| `size-7` | `text-[1.75rem]` |
+| `size-10` | `text-[2.5rem]` |
+
+For any other `size-N` not listed, multiply N by 0.25rem.
+
 ---
 
 ## API reference

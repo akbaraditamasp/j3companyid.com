@@ -1,0 +1,80 @@
+{{--
+  Halaman listing semua produk — route /shop.
+  Kategori per-item ada di /shop/category/[slug].edge (prefix statis "category"
+  supaya tidak tabrakan dengan route dinamis /shop/:slug milik detail produk,
+  lihat src/views/pages/shop/[slug].edge).
+--}}
+@component('layouts/main')
+  @slot('title')
+    Shop — J3 Company
+  @end
+
+  @slot('description')
+    Jelajahi seluruh koleksi sepatu, apparel, dan aksesoris import premium J3 Company.
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(sortParam = ['newest', 'price-asc', 'price-desc'].includes(query.sort) ? query.sort : 'newest')
+    @let(sortMap = { newest: { sort: 'createdAt', order: 'desc' }, 'price-asc': { sort: 'price', order: 'asc' }, 'price-desc': { sort: 'price', order: 'desc' } })
+    @let(sortConfig = sortMap[sortParam])
+    @let(page = Number(query.page || 1))
+
+    @let(categoriesResult = await category.read({ limit: 100, sort: 'name', order: 'asc' }))
+    @let(result = await product.read({
+      filters: { status: { $eq: 'PUBLISH' } },
+      sort: sortConfig.sort,
+      order: sortConfig.order,
+      limit: 12,
+      page: page,
+      populate: ['brand', 'thumbnail'],
+    }))
+
+    {{-- Breadcrumb --}}
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="text-ink">Shop</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+      <div class="flex items-end justify-between gap-8">
+        <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+          Shop
+        </h1>
+
+        <select
+          x-data
+          @change="window.location.href = '/shop?sort=' + $event.target.value"
+          class="border border-ink-100 bg-white px-3 py-2 font-display text-[11px] uppercase tracking-label text-ink-700"
+        >
+          <option value="newest" {{{ sortParam === 'newest' ? 'selected' : '' }}}>Terbaru</option>
+          <option value="price-asc" {{{ sortParam === 'price-asc' ? 'selected' : '' }}}>Harga Terendah</option>
+          <option value="price-desc" {{{ sortParam === 'price-desc' ? 'selected' : '' }}}>Harga Tertinggi</option>
+        </select>
+      </div>
+
+      <div class="mt-6">
+        @!component('components/category-pills', { categories: categoriesResult.data, active: null })
+      </div>
+
+      @if(result.data.length === 0)
+        <div class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:package-search" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Belum ada produk yang tersedia saat ini.</p>
+        </div>
+      @else
+        <div class="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+          @each(item in result.data)
+            @!component('components/product-card', { product: item })
+          @end
+        </div>
+
+        @!component('components/pagination', { meta: result.meta, basePath: '/shop', query: { sort: sortParam } })
+      @end
+    </section>
+  @end
+@end

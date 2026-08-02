@@ -50,6 +50,10 @@
     timer: null,
     paused: false,
     reduce: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    touchStartX: 0,
+    touchStartY: 0,
+    touchDeltaX: 0,
+    swiping: false,
     start() {
       this.stop();
       if (this.reduce || this.count < 2) return;
@@ -63,14 +67,42 @@
       this.current = n;
     },
     next() { this.go(this.current + 1); this.start() },
-    prev() { this.go(this.current - 1); this.start() }
+    prev() { this.go(this.current - 1); this.start() },
+    onTouchStart(e) {
+      if (this.count < 2) return;
+      this.swiping = true;
+      this.paused = true;
+      this.touchStartX = e.touches[0].clientX;
+      this.touchStartY = e.touches[0].clientY;
+      this.touchDeltaX = 0;
+    },
+    onTouchMove(e) {
+      if (!this.swiping) return;
+      const dx = e.touches[0].clientX - this.touchStartX;
+      const dy = e.touches[0].clientY - this.touchStartY;
+      if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+      this.touchDeltaX = dx;
+    },
+    onTouchEnd() {
+      if (!this.swiping) return;
+      this.swiping = false;
+      this.paused = false;
+      if (Math.abs(this.touchDeltaX) > 50) {
+        this.touchDeltaX < 0 ? this.next() : this.prev();
+      }
+      this.touchDeltaX = 0;
+    }
   }"
   x-init="start()"
   @mouseenter="paused = true"
   @mouseleave="paused = false"
   @focusin="paused = true"
   @focusout="paused = false"
-  class="relative h-[88svh] min-h-155 w-full overflow-hidden bg-ink"
+  @touchstart="onTouchStart($event)"
+  @touchmove="onTouchMove($event)"
+  @touchend="onTouchEnd()"
+  @touchcancel="onTouchEnd()"
+  class="relative h-[88svh] min-h-155 w-full touch-pan-y overflow-hidden bg-ink"
 >
   @each((slide, i) in slides)
     <div
@@ -128,7 +160,7 @@
               class="group mt-8 inline-flex items-center gap-3 bg-white px-7 py-3.5 font-display text-xs font-medium uppercase tracking-label text-ink transition-colors duration-300 hover:bg-brand hover:text-white"
             >
               {{ slide.ctaText }}
-              <iconify-icon icon="lucide:arrow-right" class="size-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"></iconify-icon>
+              <iconify-icon icon="lucide:arrow-right" class="size-3.5 text-[0.875rem] transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"></iconify-icon>
             </a>
           </div>
         </div>
@@ -146,7 +178,7 @@
           @click="prev()"
           class="grid size-11 place-items-center rounded-full border border-white/25 text-white backdrop-blur-sm transition hover:border-white hover:bg-white hover:text-ink"
         >
-          <iconify-icon icon="lucide:chevron-left" class="size-4" aria-hidden="true"></iconify-icon>
+          <iconify-icon icon="lucide:chevron-left" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
         </button>
         <button
           type="button"
@@ -154,7 +186,7 @@
           @click="next()"
           class="grid size-11 place-items-center rounded-full border border-white/25 text-white backdrop-blur-sm transition hover:border-white hover:bg-white hover:text-ink"
         >
-          <iconify-icon icon="lucide:chevron-right" class="size-4" aria-hidden="true"></iconify-icon>
+          <iconify-icon icon="lucide:chevron-right" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
         </button>
       </div>
 

@@ -81,8 +81,23 @@
         class="grid size-10 place-items-center rounded-full transition-colors duration-300"
         :class="solid ? 'text-ink-700 hover:bg-ink-100' : 'text-white hover:bg-white/10'"
       >
-        <iconify-icon icon="lucide:search" class="size-4.5" aria-hidden="true"></iconify-icon>
+        <iconify-icon icon="lucide:search" class="size-4.5 text-[1.125rem]" aria-hidden="true"></iconify-icon>
       </button>
+
+      <a
+        href="/wishlist"
+        aria-label="Wishlist"
+        class="relative grid size-10 place-items-center rounded-full transition-colors duration-300"
+        :class="solid ? 'text-ink-700 hover:bg-ink-100' : 'text-white hover:bg-white/10'"
+      >
+        <iconify-icon icon="lucide:heart" class="size-4.5 text-[1.125rem]" aria-hidden="true"></iconify-icon>
+        <span
+          x-cloak
+          x-show="$store.wishlist.count > 0"
+          x-text="$store.wishlist.count"
+          class="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-brand font-sans text-[9px] font-semibold text-white"
+        ></span>
+      </a>
 
       <a
         href="/cart"
@@ -90,8 +105,13 @@
         class="relative grid size-10 place-items-center rounded-full transition-colors duration-300"
         :class="solid ? 'text-ink-700 hover:bg-ink-100' : 'text-white hover:bg-white/10'"
       >
-        <iconify-icon icon="mdi:cart-outline" class="size-4.5" aria-hidden="true"></iconify-icon>
-        <span class="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-brand" aria-hidden="true"></span>
+        <iconify-icon icon="mdi:cart-outline" class="size-4.5 text-[1.125rem]" aria-hidden="true"></iconify-icon>
+        <span
+          x-cloak
+          x-show="$store.cart.count > 0"
+          x-text="$store.cart.count"
+          class="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-brand font-sans text-[9px] font-semibold text-white"
+        ></span>
       </a>
 
       {{-- Hamburger --}}
@@ -104,7 +124,7 @@
         class="grid size-10 place-items-center rounded-full transition-colors duration-300 lg:hidden"
         :class="solid ? 'text-ink-700 hover:bg-ink-100' : 'text-white hover:bg-white/10'"
       >
-        <iconify-icon :icon="mobileOpen ? 'lucide:x' : 'lucide:menu'" class="size-5" aria-hidden="true"></iconify-icon>
+        <iconify-icon :icon="mobileOpen ? 'lucide:x' : 'lucide:menu'" class="size-5 text-[1.25rem]" aria-hidden="true"></iconify-icon>
       </button>
     </div>
   </div>
