@@ -7,7 +7,7 @@
   komentar di src/models/product.ts / shop/[slug].edge) — jadi tidak ada
   penukaran ukuran, hanya retur untuk refund.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Shipping &amp; Returns — J3 Company
   @end

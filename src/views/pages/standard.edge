@@ -5,7 +5,7 @@
   (belum dikerjakan); halaman ini fokus murni ke kurasi & keaslian produk supaya
   tidak duplikasi konten dengan kedua halaman itu.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     The J3 Standard — J3 Company
   @end

@@ -1,7 +1,7 @@
 {{--
   Halaman listing semua brand — route /brands.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Brands — J3 Company
   @end

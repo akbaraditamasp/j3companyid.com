@@ -1,8 +1,9 @@
 {{--
-  Halaman About — route /about. Konten statis (bukan data-driven), sama seperti
-  pola homepage yang hardcode array testimonials/stats/story langsung di template.
+  Halaman About — route /about. Sebagian besar copy statis di template, kecuali
+  `stats` dan `trustBadges` yang ditarik dari vars `siteContent` (src/vars/site-content.ts)
+  supaya tidak drift dari angka yang sama di homepage.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Tentang Kami — J3 Company
   @end
@@ -38,6 +39,7 @@
 
     {{-- Brand story --}}
     @let(story = { image: 'brand/heritage.jpg' })
+    @let(content = await siteContent.get())
 
     <section class="bg-ink">
       <div class="mx-auto grid max-w-350 grid-cols-1 lg:grid-cols-12">
@@ -73,11 +75,7 @@
           </p>
 
           <div class="mt-10 grid grid-cols-3 gap-6 border-t border-white/10 pt-8">
-            @each(stat in [
-              { value: '500+', label: 'Produk Terkurasi' },
-              { value: '3', label: 'Negara Sumber' },
-              { value: '2019', label: 'Berdiri Sejak' },
-            ])
+            @each(stat in content.stats)
               <div>
                 <p class="font-display text-2xl font-semibold text-white sm:text-3xl">{{ stat.value }}</p>
                 <p class="mt-1 text-[11px] uppercase tracking-label text-white/40">{{ stat.label }}</p>
@@ -114,11 +112,7 @@
     {{-- Trust badges --}}
     <section class="border-y border-ink-100 bg-bone py-14">
       <div class="mx-auto grid max-w-350 grid-cols-3 gap-4 px-5 md:px-8">
-        @each(trust in [
-          { icon: 'lucide:truck', label: 'Free Shipping' },
-          { icon: 'lucide:badge-check', label: 'Garansi Keaslian' },
-          { icon: 'lucide:rotate-ccw', label: 'Retur 14 Hari' },
-        ])
+        @each(trust in content.trustBadges)
           <div class="flex flex-col items-center gap-2 text-center">
             <iconify-icon icon="{{ trust.icon }}" class="size-6 text-[1.5rem] text-ink-500" aria-hidden="true"></iconify-icon>
             <span class="font-display text-[10px] uppercase tracking-label text-ink-500">{{ trust.label }}</span>

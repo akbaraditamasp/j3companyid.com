@@ -1,42 +1,18 @@
 {{--
   Hero slideshow — J3 COMPANY
 
-  EDIT SLIDE DI SINI. `image` = path relatif di dalam /static, mis. 'hero/hero-01.jpg'.
-  Biarkan `image: ''` untuk menampilkan gradient placeholder (`bg`) selama foto asli
-  belum tersedia — lihat PLACEHOLDER STRATEGY di plan.
+  Slide dikelola dari admin panel (model `heroSlide`) — tambah/edit/hapus lewat
+  /_admin, hanya slide berstatus PUBLISH yang tampil, urutan dari field `order`.
 --}}
-@let(slides = [
-  {
-    image: 'hero/hero-01.jpg',
-    bg: 'bg-[radial-gradient(120%_120%_at_20%_0%,#4a3b31_0%,#241c17_55%,#14110f_100%)]',
-    alt: 'Red Wing Heritage boots di atas workbench',
-    eyebrow: 'New Arrival',
-    title: 'Built For The Long Haul',
-    subtitle: 'Goodyear-welted Red Wing Heritage, imported dan hand-selected.',
-    ctaText: 'Shop Red Wing',
-    ctaHref: '/brands/red-wing',
-  },
-  {
-    image: 'hero/hero-02.jpg',
-    bg: 'bg-[radial-gradient(120%_120%_at_80%_10%,#5a2b2f_0%,#2a1618_55%,#14110f_100%)]',
-    alt: 'RM Williams Craftsman chelsea boots',
-    eyebrow: 'The Australian Original',
-    title: 'One Piece Of Leather',
-    subtitle: 'RM Williams Craftsman — tanpa jahitan, tanpa jalan pintas.',
-    ctaText: 'Shop RM Williams',
-    ctaHref: '/brands/rm-williams',
-  },
-  {
-    image: 'hero/hero-03.jpg',
-    bg: 'bg-[radial-gradient(120%_120%_at_50%_100%,#3c3a35_0%,#1d1b18_55%,#14110f_100%)]',
-    alt: 'Koleksi sepatu vintage premium',
-    eyebrow: 'Curated Vintage',
-    title: 'Worn In, Never Worn Out',
-    subtitle: 'Pasangan langka dan arsip, direstorasi dengan standar museum.',
-    ctaText: 'Browse Collection',
-    ctaHref: '/shop',
-  },
-])
+@let(slidesResult = await heroSlide.read({ filters: { status: { $eq: 'PUBLISH' } }, sort: 'order', order: 'asc', limit: 10, populate: ['image'] }))
+@let(slides = slidesResult.data)
+
+{{-- No slide published yet (fresh install, nothing added in /_admin) — keep the page's
+     h1 present regardless of hero content state, matching the i===0 slide's own h1
+     below when there IS at least one slide. --}}
+@if(slides.length === 0)
+  <h1 class="sr-only">J3 Company — Sepatu, Apparel & Aksesoris Import Premium</h1>
+@end
 
 <section
   role="region"
@@ -117,26 +93,17 @@
       :aria-hidden="current === {{ i }} ? 'false' : 'true'"
       :inert="current === {{ i }} ? null : true"
     >
-      @if(slide.image)
-        <img
-          src="{{ imgOptimize(vite.static(slide.image), { w: 1920, q: 78 }) }}"
-          srcset="{{ imgOptimize(vite.static(slide.image), { w: 960, q: 74 }) }} 960w,
-                  {{ imgOptimize(vite.static(slide.image), { w: 1440, q: 78 }) }} 1440w,
-                  {{ imgOptimize(vite.static(slide.image), { w: 2400, q: 78 }) }} 2400w"
-          sizes="100vw"
-          alt="{{ slide.alt }}"
-          class="size-full object-cover object-center"
-          {{{ i === 0 ? 'fetchpriority="high"' : 'loading="lazy"' }}}
-          decoding="async"
-        />
-      @else
-        <div class="size-full {{ slide.bg }}" role="img" aria-label="{{ slide.alt }}"></div>
-        <div class="pointer-events-none absolute inset-0 grid place-items-center">
-          <span class="font-display text-[10px] uppercase tracking-label text-white/25">
-            placeholder — taruh static/hero/hero-0{{ i + 1 }}.jpg
-          </span>
-        </div>
-      @end
+      <img
+        src="{{ imgOptimize(slide.image.url, { w: 1920, q: 78 }) }}"
+        srcset="{{ imgOptimize(slide.image.url, { w: 960, q: 74 }) }} 960w,
+                {{ imgOptimize(slide.image.url, { w: 1440, q: 78 }) }} 1440w,
+                {{ imgOptimize(slide.image.url, { w: 2400, q: 78 }) }} 2400w"
+        sizes="100vw"
+        alt="{{ slide.alt }}"
+        class="size-full object-cover object-center"
+        {{{ i === 0 ? 'fetchpriority="high"' : 'loading="lazy"' }}}
+        decoding="async"
+      />
 
       {{-- Scrim: berat di bawah agar caption tetap terbaca, plus wash atas untuk header transparan --}}
       <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-ink/45"></div>
@@ -149,9 +116,17 @@
             <p class="font-display text-[11px] font-medium uppercase tracking-label text-brand">
               <span class="mr-3 inline-block h-px w-8 align-middle bg-brand" aria-hidden="true"></span>{{ slide.eyebrow }}
             </p>
-            <h1 class="mt-4 font-display text-4xl font-semibold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
-              {{ slide.title }}
-            </h1>
+            {{-- Only the first slide renders as <h1> — one per page for SEO; the rest use
+                 a <p> with identical styling so multiple slides never produce multiple h1s. --}}
+            @if(i === 0)
+              <h1 class="mt-4 font-display text-4xl font-semibold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+                {{ slide.title }}
+              </h1>
+            @else
+              <p class="mt-4 font-display text-4xl font-semibold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+                {{ slide.title }}
+              </p>
+            @end
             <p class="mt-5 max-w-lg text-sm leading-relaxed text-white/75 sm:text-base">
               {{ slide.subtitle }}
             </p>

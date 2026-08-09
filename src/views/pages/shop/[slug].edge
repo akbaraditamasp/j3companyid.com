@@ -14,7 +14,7 @@
   global (product.show/product.read); kalau dipakai sebagai nama variabel lokal
   juga, itu akan menutupi (shadow) model global-nya di scope yang sama.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     {{-- product.show(id) looks up by record id, not by our separate `slug` field —
          has to go through read({ filters: { slug } }) instead. --}}
@@ -28,7 +28,27 @@
   @end
 
   @slot('description')
-    Detail produk sepatu, apparel, dan aksesoris import premium dari J3 Company — dikurasi langsung sejak 2019.
+    @let(descResult = await product.read({ filters: { slug: { $eq: params.slug } }, limit: 1, populate: ['brand'] }))
+    @let(descItem = descResult.data[0])
+    @if(!descItem)
+      Detail produk sepatu, apparel, dan aksesoris import premium dari J3 Company — dikurasi langsung sejak 2019.
+    @else
+      @let(descPlain = String(descItem.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim())
+      @let(descFallback = (descItem.brand?.name || '') + ' ' + descItem.name + ' — dikurasi langsung oleh J3 Company. Sepatu & apparel import premium, garansi keaslian.')
+      {{ (descPlain || descFallback).slice(0, 160) }}
+    @end
+  @end
+
+  @slot('image')
+    @let(imgResult = await product.read({ filters: { slug: { $eq: params.slug } }, limit: 1, populate: ['thumbnail'] }))
+    @let(imgItem = imgResult.data[0])
+    @if(imgItem?.thumbnail?.url)
+      {{ imgOptimize(imgItem.thumbnail.url, { w: 1200 }) }}
+    @end
+  @end
+
+  @slot('type')
+    product
   @end
 
   @slot('main')
@@ -43,6 +63,46 @@
     @let(imageUrls = [item.thumbnail?.url, ...(item.gallery || []).map((g) => g.url)].filter((u) => u))
     @let(relatedResult = await product.read({ filters: { status: { $eq: 'PUBLISH' } }, limit: 5, sort: 'createdAt', order: 'desc', populate: ['brand', 'thumbnail'] }))
     @let(related = relatedResult.data.filter((p) => p.id.toString() !== item.id.toString()).slice(0, 4))
+    @let(content = await siteContent.get())
+
+    {{-- JSON-LD: Product + BreadcrumbList --}}
+    @let(plainDescription = String(item.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim())
+    @let(productJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: item.name,
+      image: imageUrls.map((u) => siteUrl() + imgOptimize(u, { w: 1200 })),
+      description: plainDescription || (item.name + ' — J3 Company'),
+      sku: item.sku,
+      brand: item.brand?.name ? { '@type': 'Brand', name: item.brand.name } : undefined,
+      offers: {
+        '@type': 'Offer',
+        url: siteUrl() + '/shop/' + item.slug,
+        priceCurrency: 'IDR',
+        price: item.price,
+        // No explicit stock-status field on the product model — a PUBLISH-status
+        // listing is treated as available (staff unpublish/DRAFT it otherwise).
+        availability: 'https://schema.org/InStock',
+        itemCondition: 'https://schema.org/NewCondition',
+      },
+      aggregateRating: item.reviewCount > 0 ? {
+        '@type': 'AggregateRating',
+        ratingValue: item.rating,
+        reviewCount: item.reviewCount,
+      } : undefined,
+    })
+    @let(breadcrumbJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl() + '/' },
+        { '@type': 'ListItem', position: 2, name: 'Shop', item: siteUrl() + '/shop' },
+        { '@type': 'ListItem', position: 3, name: item.category?.name, item: siteUrl() + '/shop/category/' + item.category?.slug },
+        { '@type': 'ListItem', position: 4, name: item.name, item: siteUrl() + '/shop/' + item.slug },
+      ],
+    })
+    <script type="application/ld+json">{{{ jsonLd(productJsonLd) }}}</script>
+    <script type="application/ld+json">{{{ jsonLd(breadcrumbJsonLd) }}}</script>
 
     {{-- Breadcrumb --}}
     <div class="border-b border-ink-100">
@@ -186,11 +246,7 @@
 
           {{-- Trust badges --}}
           <div class="mt-8 grid grid-cols-3 gap-4 border-t border-ink-100 pt-6">
-            @each(trust in [
-              { icon: 'lucide:truck', label: 'Free Shipping' },
-              { icon: 'lucide:badge-check', label: 'Garansi Keaslian' },
-              { icon: 'lucide:rotate-ccw', label: 'Retur 14 Hari' },
-            ])
+            @each(trust in content.trustBadges)
               <div class="flex flex-col items-center gap-2 text-center">
                 <iconify-icon icon="{{ trust.icon }}" class="size-5 text-[1.25rem] text-ink-500" aria-hidden="true"></iconify-icon>
                 <span class="font-display text-[10px] uppercase tracking-label text-ink-500">{{ trust.label }}</span>

@@ -1,4 +1,4 @@
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     J3 COMPANY — Sepatu, Apparel & Aksesoris Import Premium
   @end
@@ -72,6 +72,7 @@
     @let(story = {
       image: 'brand/heritage.jpg',
     })
+    @let(content = await siteContent.get())
 
     <section class="bg-ink">
       <div class="mx-auto grid max-w-350 grid-cols-1 lg:grid-cols-12">
@@ -114,11 +115,7 @@
           </p>
 
           <div class="mt-10 grid grid-cols-3 gap-6 border-t border-white/10 pt-8">
-            @each(stat in [
-              { value: '500+', label: 'Produk Terkurasi' },
-              { value: '3', label: 'Negara Sumber' },
-              { value: '2019', label: 'Berdiri Sejak' },
-            ])
+            @each(stat in content.stats)
               <div>
                 <p class="font-display text-2xl font-semibold text-white sm:text-3xl">{{ stat.value }}</p>
                 <p class="mt-1 text-[11px] uppercase tracking-label text-white/40">{{ stat.label }}</p>
@@ -137,11 +134,8 @@
       </div>
     </section>
 
-    @let(testimonials = [
-      { name: 'Budi S.', location: 'Jakarta', product: 'Red Wing Iron Ranger', rating: 5, quote: 'Detail packaging dan finishing Red Wing-nya rapi banget, rasanya kayak beli langsung dari flagship store. Worth every penny.' },
-      { name: 'Sarah W.', location: 'Surabaya', product: 'RM Williams Craftsman', rating: 5, quote: 'Ukurannya pas sesuai size chart, dan kualitas kulitnya beneran premium. RM Williams saya sekarang jadi sepatu favorit ke kantor.' },
-      { name: 'Andra P.', location: 'Bandung', product: 'Filson Mackinaw Jacket', rating: 5, quote: 'Tim J3 Company kasih rekomendasi ukuran yang tepat banget untuk jaket saya, padahal saya belum pernah beli outerwear import sebelumnya. Sekarang jadi pelanggan tetap.' },
-    ])
+    @let(testimonialsResult = await testimonial.read({ filters: { status: { $eq: 'PUBLISH' } }, limit: 3, sort: 'createdAt', order: 'desc' }))
+    @let(testimonials = testimonialsResult.data)
 
     <section class="mx-auto max-w-350 px-5 py-20 md:px-8 md:py-28">
       <div class="mx-auto max-w-xl text-center">
@@ -152,25 +146,25 @@
       </div>
 
       <div class="mt-14 grid grid-cols-1 gap-8 md:grid-cols-3">
-        @each(testimonial in testimonials)
+        @each(item in testimonials)
           <div class="flex h-full flex-col border border-ink-100 p-8">
             <div class="flex items-center gap-1 text-brand">
-              @each(i in Array.from({ length: testimonial.rating }))
+              @each(i in Array.from({ length: item.rating }))
                 <iconify-icon icon="mdi:star" class="size-4 text-[1rem]" aria-hidden="true"></iconify-icon>
               @end
             </div>
 
             <div class="mt-5 flex-1">
-              <p class="text-sm leading-relaxed text-ink-700">"{{ testimonial.quote }}"</p>
+              <p class="text-sm leading-relaxed text-ink-700">"{{ item.quote }}"</p>
             </div>
 
             <div class="mt-6 flex items-center gap-3 border-t border-ink-100 pt-6">
               <div class="grid size-10 shrink-0 place-items-center rounded-full bg-ink-100 font-display text-xs font-semibold uppercase text-ink-500">
-                {{ testimonial.name.charAt(0) }}
+                {{ item.name.charAt(0) }}
               </div>
               <div>
-                <p class="font-display text-xs font-semibold uppercase tracking-tight text-ink">{{ testimonial.name }}</p>
-                <p class="text-xs text-ink-500">{{ testimonial.location }} · {{ testimonial.product }}</p>
+                <p class="font-display text-xs font-semibold uppercase tracking-tight text-ink">{{ item.name }}</p>
+                <p class="text-xs text-ink-500">{{ item.location }} · {{ item.product }}</p>
               </div>
             </div>
           </div>

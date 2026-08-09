@@ -4,13 +4,17 @@
   tidak kelihatan kosong sekilas sebelum Alpine jalan. `settings` (shippingNotice, dll)
   tetap diambil server-side dari vars group `checkout` (src/vars/checkout.ts).
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Keranjang Belanja — J3 Company
   @end
 
   @slot('description')
     Tinjau barang di keranjang belanja Anda sebelum checkout.
+  @end
+
+  @slot('robots')
+    noindex, nofollow
   @end
 
   @slot('main')

@@ -14,13 +14,17 @@
   tombol "Bayar Sekarang". success_redirect_url & failure_redirect_url Xendit
   (diset saat bikin invoice) sama-sama mengarah balik ke halaman itu juga.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Checkout — J3 Company
   @end
 
   @slot('description')
     Selesaikan pesanan Anda di J3 Company.
+  @end
+
+  @slot('robots')
+    noindex, nofollow
   @end
 
   @slot('main')

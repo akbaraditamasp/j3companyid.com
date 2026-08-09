@@ -9,7 +9,7 @@
   auto-resolve slug->id di product.read(), jadi brand di-resolve dulu
   (pola yang sama seperti src/views/pages/shop/category/[slug].edge).
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     @let(titleResult = await brand.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
     @let(titleBrand = titleResult.data[0])
@@ -21,7 +21,26 @@
   @end
 
   @slot('description')
-    Jelajahi koleksi produk J3 Company dari brand ini.
+    @let(descResult = await brand.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(descBrand = descResult.data[0])
+    @if(!descBrand)
+      Jelajahi koleksi produk J3 Company dari brand ini.
+    @else
+      Jelajahi koleksi {{ descBrand.name }} di J3 Company — sepatu, apparel, dan aksesoris import premium, dikurasi langsung dan bergaransi keaslian.
+    @end
+  @end
+
+  @slot('image')
+    @let(imgResult = await brand.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(imgBrand = imgResult.data[0])
+    @if(imgBrand?.logo?.url)
+      {{ imgOptimize(imgBrand.logo.url, { w: 1200 }) }}
+    @end
+  @end
+
+  @slot('canonical')
+    @let(pageNum = Number(query.page || 1))
+    /brands/{{ params.slug }}{{{ pageNum > 1 ? '?page=' + pageNum : '' }}}
   @end
 
   @slot('main')
@@ -42,6 +61,17 @@
       page: page,
       populate: ['brand', 'thumbnail'],
     }))
+
+    @let(breadcrumbJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl() + '/' },
+        { '@type': 'ListItem', position: 2, name: 'Brands', item: siteUrl() + '/brands' },
+        { '@type': 'ListItem', position: 3, name: b.name, item: siteUrl() + '/brands/' + b.slug },
+      ],
+    })
+    <script type="application/ld+json">{{{ jsonLd(breadcrumbJsonLd) }}}</script>
 
     {{-- Breadcrumb --}}
     <div class="border-b border-ink-100">

@@ -1,4 +1,5 @@
 <footer class="bg-ink text-white">
+  @let(settings = await contact.get())
   <div class="mx-auto max-w-350 px-5 py-16 md:px-8 md:py-20">
     <div class="grid grid-cols-2 gap-10 md:grid-cols-12 md:gap-8">
 
@@ -19,9 +20,9 @@
         </p>
         <div class="mt-6 flex items-center gap-3">
           @each(social in [
-            { label: 'Instagram', icon: 'simple-icons:instagram', href: 'https://instagram.com' },
-            { label: 'TikTok', icon: 'simple-icons:tiktok', href: 'https://tiktok.com' },
-            { label: 'WhatsApp', icon: 'simple-icons:whatsapp', href: 'https://wa.me/6281234567890' },
+            { label: 'Instagram', icon: 'simple-icons:instagram', href: settings.instagramUrl || 'https://instagram.com' },
+            { label: 'TikTok', icon: 'simple-icons:tiktok', href: settings.tiktokUrl || 'https://tiktok.com' },
+            { label: 'WhatsApp', icon: 'simple-icons:whatsapp', href: 'https://wa.me/' + settings.whatsappNumber },
           ])
             <a
               href="{{ social.href }}"

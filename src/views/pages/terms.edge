@@ -4,7 +4,7 @@
   unit eksklusif, retur 14 hari di /shipping-returns, garansi keaslian di
   /standard) — bukan boilerplate generik yang tidak nyambung dengan situs ini.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Terms of Service — J3 Company
   @end

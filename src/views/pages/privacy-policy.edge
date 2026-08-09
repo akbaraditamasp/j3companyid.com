@@ -9,7 +9,7 @@
   - Cart/wishlist tersimpan di localStorage browser, bukan di server (lihat
     komentar di cart.edge/wishlist.edge).
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Privacy Policy — J3 Company
   @end

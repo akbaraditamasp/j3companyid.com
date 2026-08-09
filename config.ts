@@ -22,14 +22,21 @@ export default defineConfig({
     () => import("./src/models/product"),
     () => import("./src/models/order"),
     () => import("./src/models/contact-message"),
+    () => import("./src/models/testimonial"),
+    () => import("./src/models/hero-slide"),
   ],
   routes: [
     () => import("./src/routes/checkout"),
     () => import("./src/routes/shipping"),
     () => import("./src/routes/contact"),
+    () => import("./src/routes/sitemap"),
+    () => import("./src/routes/robots"),
   ],
   vars: [
     () => import("./src/vars/checkout"),
     () => import("./src/vars/shipping"),
+    () => import("./src/vars/contact"),
+    () => import("./src/vars/site-content"),
   ],
+  helpers: [() => import("./src/helpers/site-url"), () => import("./src/helpers/json-ld")],
 });

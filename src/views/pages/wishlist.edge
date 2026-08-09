@@ -3,13 +3,17 @@
   lihat src/client/main.ts). Tidak ada data dari server di halaman ini, jadi seluruh
   konten dibungkus x-cloak supaya tidak kelihatan kosong sekilas sebelum Alpine jalan.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Wishlist — J3 Company
   @end
 
   @slot('description')
     Barang-barang yang Anda simpan untuk dilihat kembali nanti.
+  @end
+
+  @slot('robots')
+    noindex, nofollow
   @end
 
   @slot('main')

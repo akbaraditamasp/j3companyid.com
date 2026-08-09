@@ -3,13 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{{ String(await $slots.title?.() ?? 'J3 COMPANY').trim() }}}</title>
-  <meta name="description" content="{{{ String(await $slots.description?.() ?? 'J3 COMPANY — sepatu import & vintage premium.').trim() }}}" />
+
+  {{-- `request` isn't available inside a component/layout (only in a page) — the
+       caller passes the current path as a prop instead, same pattern used for
+       components/header.edge. See every `@component('layouts/main', { path: ... })`
+       call in src/views/pages/**. --}}
+  @let(currentPath = $props.get('path', '/'))
+  @let(pageTitle = String(await $slots.title?.() ?? 'J3 COMPANY').trim())
+  @let(pageDescription = String(await $slots.description?.() ?? 'J3 COMPANY — sepatu import & vintage premium.').trim())
+  {{-- `|| default` (not just `?? default`) on purpose — a defined-but-empty image
+       slot (e.g. a product with no thumbnail yet) must fall back too, not resolve
+       to an empty og:image URL --}}
+  @let(pageImage = String(await $slots.image?.() ?? '').trim() || vite.static('og-image.png'))
+  @let(pageType = String(await $slots.type?.() ?? 'website').trim())
+  @let(pageRobots = String(await $slots.robots?.() ?? 'index, follow').trim())
+  @let(canonicalPath = String(await $slots.canonical?.() ?? currentPath).trim())
+  @let(absoluteUrl = siteUrl() + canonicalPath)
+  {{-- `vite.static()`/`vite.asset()` return an already-absolute URL in dev (pointing
+       at the Vite dev server, e.g. http://localhost:5173/…) but a root-relative path
+       in a production build — only prepend siteUrl() when it's not already absolute,
+       or dev ends up with "http://localhost:3000http://localhost:5173/…". --}}
+  @let(toAbsolute = (u) => u.startsWith('http') ? u : siteUrl() + u)
+  @let(absoluteImage = toAbsolute(pageImage))
+  @let(logoUrl = toAbsolute(vite.static('logo.png')))
+  @let(ogImageUrl = toAbsolute(vite.static('og-image.png')))
+
+  <title>{{{ pageTitle }}}</title>
+  <meta name="description" content="{{{ pageDescription }}}" />
+  <meta name="robots" content="{{{ pageRobots }}}" />
+  <link rel="canonical" href="{{{ absoluteUrl }}}" />
+
+  {{-- Open Graph --}}
+  <meta property="og:type" content="{{{ pageType }}}" />
+  <meta property="og:site_name" content="J3 Company" />
+  <meta property="og:locale" content="id_ID" />
+  <meta property="og:title" content="{{{ pageTitle }}}" />
+  <meta property="og:description" content="{{{ pageDescription }}}" />
+  <meta property="og:url" content="{{{ absoluteUrl }}}" />
+  <meta property="og:image" content="{{{ absoluteImage }}}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  {{-- Twitter Card --}}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{{ pageTitle }}}" />
+  <meta name="twitter:description" content="{{{ pageDescription }}}" />
+  <meta name="twitter:image" content="{{{ absoluteImage }}}" />
+
+  <link rel="icon" href="{{ vite.static('favicon.ico') }}" sizes="any" />
+  <link rel="icon" type="image/png" sizes="96x96" href="{{ vite.static('favicon-96x96.png') }}" />
+  <link rel="apple-touch-icon" href="{{ vite.static('apple-touch-icon.png') }}" />
+  <link rel="manifest" href="{{ vite.static('site.webmanifest') }}" />
+  <meta name="theme-color" content="#dd2132" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300..700&family=Public+Sans:wght@300..800&display=swap" />
   {{{ await vite.asset('src/client/app.css') }}}
   {{{ await vite.asset('src/client/main.ts') }}}
+
+  {{-- Organization / WebSite JSON-LD — sitewide, same on every page --}}
+  @let(orgContact = await contact.get())
+  @let(sameAs = [orgContact.instagramUrl, orgContact.tiktokUrl].filter((u) => !!u))
+  @let(orgJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': siteUrl() + '/#organization',
+        name: 'J3 Company',
+        url: siteUrl() + '/',
+        logo: logoUrl,
+        image: ogImageUrl,
+        email: orgContact.email,
+        address: orgContact.address,
+        sameAs: sameAs,
+      },
+      {
+        '@type': 'WebSite',
+        '@id': siteUrl() + '/#website',
+        name: 'J3 Company',
+        url: siteUrl() + '/',
+        publisher: { '@id': siteUrl() + '/#organization' },
+        inLanguage: 'id-ID',
+      },
+    ],
+  })
+  <script type="application/ld+json">{{{ jsonLd(orgJsonLd) }}}</script>
 </head>
 <body class="bg-white font-sans text-ink antialiased">
   {{{ await $slots.main() }}}

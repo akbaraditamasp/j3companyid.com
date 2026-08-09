@@ -4,13 +4,18 @@
   supaya tidak tabrakan dengan route dinamis /shop/:slug milik detail produk,
   lihat src/views/pages/shop/[slug].edge).
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     Shop — J3 Company
   @end
 
   @slot('description')
     Jelajahi seluruh koleksi sepatu, apparel, dan aksesoris import premium J3 Company.
+  @end
+
+  @slot('canonical')
+    @let(pageNum = Number(query.page || 1))
+    /shop{{{ pageNum > 1 ? '?page=' + pageNum : '' }}}
   @end
 
   @slot('main')

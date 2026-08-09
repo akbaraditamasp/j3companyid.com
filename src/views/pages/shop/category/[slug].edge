@@ -8,7 +8,7 @@
   Filter produk butuh id kategori (record relation), bukan slug — tidak ada
   auto-resolve slug->id di product.read(), jadi kategori di-resolve dulu.
 --}}
-@component('layouts/main')
+@component('layouts/main', { path: request.path })
   @slot('title')
     @let(titleResult = await category.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
     @let(titleCategory = titleResult.data[0])
@@ -20,7 +20,26 @@
   @end
 
   @slot('description')
-    Jelajahi koleksi produk J3 Company berdasarkan kategori.
+    @let(descResult = await category.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(descCategory = descResult.data[0])
+    @if(!descCategory)
+      Jelajahi koleksi produk J3 Company berdasarkan kategori.
+    @else
+      Jelajahi koleksi {{ descCategory.name }} di J3 Company — sepatu, apparel, dan aksesoris import premium yang dikurasi langsung sejak 2019.
+    @end
+  @end
+
+  @slot('image')
+    @let(imgResult = await category.read({ filters: { slug: { $eq: params.slug } }, limit: 1 }))
+    @let(imgCategory = imgResult.data[0])
+    @if(imgCategory?.image?.url)
+      {{ imgOptimize(imgCategory.image.url, { w: 1200 }) }}
+    @end
+  @end
+
+  @slot('canonical')
+    @let(pageNum = Number(query.page || 1))
+    /shop/category/{{ params.slug }}{{{ pageNum > 1 ? '?page=' + pageNum : '' }}}
   @end
 
   @slot('main')
@@ -46,6 +65,17 @@
       page: page,
       populate: ['brand', 'thumbnail'],
     }))
+
+    @let(breadcrumbJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl() + '/' },
+        { '@type': 'ListItem', position: 2, name: 'Shop', item: siteUrl() + '/shop' },
+        { '@type': 'ListItem', position: 3, name: cat.name, item: siteUrl() + '/shop/category/' + cat.slug },
+      ],
+    })
+    <script type="application/ld+json">{{{ jsonLd(breadcrumbJsonLd) }}}</script>
 
     {{-- Breadcrumb --}}
     <div class="border-b border-ink-100">
