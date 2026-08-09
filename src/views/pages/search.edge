@@ -1,0 +1,95 @@
+{{--
+  Halaman hasil pencarian produk — route /search?q=...
+  Search dilakukan lewat product.read({ search }), yang fuzzy-match ke
+  searchFields model product ("name", "sku") — lihat src/models/product.ts.
+--}}
+@component('layouts/main', { path: request.path })
+  @slot('title')
+    @if(query.q)
+      Hasil Pencarian "{{ query.q }}" — J3 Company
+    @else
+      Cari Produk — J3 Company
+    @end
+  @end
+
+  @slot('description')
+    Cari sepatu, apparel, dan aksesoris import premium di katalog J3 Company.
+  @end
+
+  @slot('robots')
+    noindex, follow
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    @let(q = String(query.q || '').trim())
+    @let(page = Number(query.page || 1))
+    @let(result = q
+      ? await product.read({
+          search: q,
+          filters: { status: { $eq: 'PUBLISH' } },
+          sort: 'createdAt',
+          order: 'desc',
+          limit: 12,
+          page: page,
+          populate: ['brand', 'thumbnail'],
+        })
+      : null)
+
+    {{-- Breadcrumb --}}
+    <div class="border-b border-ink-100">
+      <div class="mx-auto flex max-w-350 items-center gap-2 px-5 py-4 font-display text-[11px] uppercase tracking-label text-ink-500 md:px-8">
+        <a href="/" class="transition-colors hover:text-ink">Home</a>
+        <iconify-icon icon="lucide:chevron-right" class="size-3 text-[0.75rem]" aria-hidden="true"></iconify-icon>
+        <span class="text-ink">Pencarian</span>
+      </div>
+    </div>
+
+    <section class="mx-auto max-w-350 px-5 py-10 md:px-8 md:py-16">
+      <h1 class="font-display text-3xl font-semibold uppercase tracking-tight text-ink md:text-4xl">
+        @if(q)
+          Hasil untuk "{{ q }}"
+        @else
+          Cari Produk
+        @end
+      </h1>
+
+      <form action="/search" method="GET" class="mt-6 flex max-w-lg items-center gap-2 border border-ink-100 px-4 py-3">
+        <iconify-icon icon="lucide:search" class="size-4.5 text-[1.125rem] shrink-0 text-ink-300" aria-hidden="true"></iconify-icon>
+        <input
+          type="text"
+          name="q"
+          value="{{ q }}"
+          placeholder="Cari nama produk atau SKU..."
+          autocomplete="off"
+          class="w-full font-sans text-sm text-ink placeholder:text-ink-300 focus:outline-none"
+        />
+      </form>
+
+      @if(!q)
+        <div class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:search" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Ketik kata kunci untuk mencari produk.</p>
+        </div>
+      @elseif(result.data.length === 0)
+        <div class="mt-16 flex flex-col items-center gap-5 py-16 text-center">
+          <iconify-icon icon="lucide:package-search" class="size-10 text-[2.5rem] text-ink-300" aria-hidden="true"></iconify-icon>
+          <p class="text-sm text-ink-500">Tidak ada produk yang cocok dengan "{{ q }}".</p>
+        </div>
+      @else
+        <p class="mt-6 font-display text-[11px] uppercase tracking-label text-ink-500">
+          {{ result.meta.total }} produk ditemukan
+        </p>
+
+        <div class="mt-6 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+          @each(item in result.data)
+            @!component('components/product-card', { product: item })
+          @end
+        </div>
+
+        @!component('components/pagination', { meta: result.meta, basePath: '/search', query: { q: q } })
+      @end
+    </section>
+  @end
+@end
