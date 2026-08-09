@@ -9,7 +9,7 @@ const contact = makeVars("contact", {
     email: email({ label: "Email" }, (z) => z.default("cs@j3companyid.com")),
     whatsappNumber: text({ label: "Nomor WhatsApp (format 62xxx, tanpa +)" }, (z) => z.default("6281234567890")),
     instagramUrl: text({ label: "Instagram URL" }, (z) => z.optional()),
-    tiktokUrl: text({ label: "TikTok URL" }, (z) => z.optional()),
+    youtubeUrl: text({ label: "YouTube URL" }, (z) => z.optional()),
   }),
 });
 

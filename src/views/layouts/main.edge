@@ -64,7 +64,7 @@
 
   {{-- Organization / WebSite JSON-LD — sitewide, same on every page --}}
   @let(orgContact = await contact.get())
-  @let(sameAs = [orgContact.instagramUrl, orgContact.tiktokUrl].filter((u) => !!u))
+  @let(sameAs = [orgContact.instagramUrl, orgContact.youtubeUrl].filter((u) => !!u))
   @let(orgJsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
