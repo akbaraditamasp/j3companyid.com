@@ -5,14 +5,28 @@
     meta     : { page, pageCount } — dari hasil product.read()
     basePath : string — mis. '/shop' atau '/shop/category/red-wing-boots'
     query    : object — query string lain yang perlu dipertahankan saat pindah halaman, mis. { sort: 'price' } (opsional)
+
+  Menampilkan maksimal 5 nomor halaman di sekitar halaman aktif; sisanya diwakili
+  tombol halaman pertama/terakhir (dengan "…" bila ada jarak).
 --}}
 @let(meta = $props.get('meta'))
 @let(basePath = $props.get('basePath'))
 @let(extraQuery = $props.get('query', {}))
+@let(windowSize = Math.min(5, meta.pageCount))
+@let(startPage = Math.max(1, Math.min(meta.page - 2, meta.pageCount - windowSize + 1)))
+@let(pages = Array.from({ length: windowSize }, (_, i) => startPage + i))
 
 @if(meta.pageCount > 1)
   <div class="mt-12 flex flex-wrap items-center gap-2">
-    @each(p in Array.from({ length: meta.pageCount }, (_, i) => i + 1))
+    @if(pages[0] > 1)
+      @let(qsFirst = Object.entries({ ...extraQuery, page: 1 }).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&'))
+      <a href="{{ basePath }}?{{ qsFirst }}" class="grid size-9 place-items-center font-display text-xs font-medium text-ink-500 transition-colors duration-300 hover:bg-ink-100 hover:text-ink">1</a>
+      @if(pages[0] > 2)
+        <span class="grid size-9 place-items-center text-xs text-ink-300">…</span>
+      @end
+    @end
+
+    @each(p in pages)
       @let(qs = Object.entries({ ...extraQuery, page: p }).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&'))
       <a
         href="{{ basePath }}?{{ qs }}"
@@ -20,6 +34,14 @@
       >
         {{ p }}
       </a>
+    @end
+
+    @if(pages[pages.length - 1] < meta.pageCount)
+      @if(pages[pages.length - 1] < meta.pageCount - 1)
+        <span class="grid size-9 place-items-center text-xs text-ink-300">…</span>
+      @end
+      @let(qsLast = Object.entries({ ...extraQuery, page: meta.pageCount }).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&'))
+      <a href="{{ basePath }}?{{ qsLast }}" class="grid size-9 place-items-center font-display text-xs font-medium text-ink-500 transition-colors duration-300 hover:bg-ink-100 hover:text-ink">{{ meta.pageCount }}</a>
     @end
   </div>
 @end

@@ -61,8 +61,19 @@
     @end
 
     @let(imageUrls = [item.thumbnail?.url, ...(item.gallery || []).map((g) => g.url)].filter((u) => u))
-    @let(relatedResult = await product.read({ filters: { status: { $eq: 'PUBLISH' } }, limit: 5, sort: 'createdAt', order: 'desc', populate: ['brand', 'thumbnail'] }))
-    @let(related = relatedResult.data.filter((p) => p.id.toString() !== item.id.toString()).slice(0, 4))
+
+    {{-- Related products — kategori & brand yang sama diprioritaskan di atas
+         kategori-saja/brand-saja. Dua query (bukan filter gabungan) karena
+         product.read() tidak mendukung OR antar-field; prioritas dihitung
+         manual dari irisan kedua hasil. --}}
+    @let(relatedByCategory = await product.read({ filters: { status: { $eq: 'PUBLISH' }, category: { $eq: item.category.id } }, limit: 20, sort: 'createdAt', order: 'desc', populate: ['brand', 'thumbnail'] }))
+    @let(relatedByBrand = await product.read({ filters: { status: { $eq: 'PUBLISH' }, brand: { $eq: item.brand.id } }, limit: 20, sort: 'createdAt', order: 'desc', populate: ['brand', 'thumbnail'] }))
+    @let(relatedCategoryIds = new Set(relatedByCategory.data.map((p) => p.id.toString())))
+    @let(relatedBrandIds = new Set(relatedByBrand.data.map((p) => p.id.toString())))
+    @let(relatedBoth = relatedByCategory.data.filter((p) => p.id.toString() !== item.id.toString() && relatedBrandIds.has(p.id.toString())))
+    @let(relatedCategoryOnly = relatedByCategory.data.filter((p) => p.id.toString() !== item.id.toString() && !relatedBrandIds.has(p.id.toString())))
+    @let(relatedBrandOnly = relatedByBrand.data.filter((p) => p.id.toString() !== item.id.toString() && !relatedCategoryIds.has(p.id.toString())))
+    @let(related = [...relatedBoth, ...relatedCategoryOnly, ...relatedBrandOnly].slice(0, 4))
     @let(content = await siteContent.get())
 
     {{-- JSON-LD: Product + BreadcrumbList --}}
@@ -257,7 +268,9 @@
       </div>
     </section>
 
-    {{-- Specifications — daftar label/value dinamis, gampang diedit admin per baris --}}
+    {{-- Specifications — daftar label/value dinamis, gampang diedit admin per baris.
+         Section disembunyikan total kalau belum ada spec yang diisi. --}}
+    @if(item.specs?.length)
     <section class="mx-auto max-w-350 px-5 pb-20 md:px-8 md:pb-28">
       <div class="mx-auto max-w-3xl">
         <h2 class="font-display text-xs font-medium uppercase tracking-label text-ink">Specifications</h2>
@@ -271,6 +284,7 @@
         </dl>
       </div>
     </section>
+    @end
 
     {{-- Related products --}}
     @if(related.length)
