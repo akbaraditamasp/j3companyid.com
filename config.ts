@@ -1,5 +1,5 @@
 import { defineConfig } from "@njinlabs/njin/config";
-import bunFilesystemAdapter from "@njinlabs/njin/adapters/bun_filesystem";
+import s3Adapter from "@njinlabs/njin/adapters/s3";
 
 export default defineConfig({
   port: Number(process.env.PORT ?? 3000),
@@ -14,7 +14,14 @@ export default defineConfig({
       : [],
   },
   adapters: {
-    file: bunFilesystemAdapter({ dir: "./uploads" }),
+    file: s3Adapter({
+      bucket: process.env.S3_BUCKET!,
+      region: process.env.S3_REGION,
+      accessKeyId: process.env.S3_ACCESS_KEY_ID,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      endpoint: process.env.S3_ENDPOINT,
+      publicUrl: process.env.S3_PUBLIC_URL,
+    }),
   },
   models: [
     () => import("./src/models/brand"),
