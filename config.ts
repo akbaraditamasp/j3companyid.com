@@ -7,6 +7,11 @@ export default defineConfig({
     path: process.env.DB_PATH ?? "rocksdb://data",
     namespace: process.env.DB_NAMESPACE ?? "general",
     database: process.env.DB_DATABASE ?? "general",
+    auth: process.env.DB_TOKEN
+      ? process.env.DB_TOKEN
+      : process.env.DB_USERNAME && process.env.DB_PASSWORD
+        ? { username: process.env.DB_USERNAME, password: process.env.DB_PASSWORD }
+        : undefined,
   },
   img: {
     hosts: process.env.IMG_HOSTS
