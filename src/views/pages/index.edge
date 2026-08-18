@@ -172,13 +172,13 @@
       </div>
     </section>
 
-    @let(brandsResult = await brand.read({ limit: 50, sort: 'name', order: 'asc' }))
+    @let(brandsResult = await brand.read({ filters: { featuredOnHomepage: { $eq: true } }, sort: 'name', order: 'asc', limit: 10 }))
 
     <section class="border-y border-ink-100 bg-bone py-14">
       <p class="text-center font-display text-[11px] uppercase tracking-label text-ink-500">Brands we carry</p>
       <div class="mt-7 flex flex-wrap items-center justify-center gap-x-12 gap-y-5 px-5">
-        @each(b in brandsResult.data)
-          <a href="/brands/{{ b.slug }}" class="font-display text-lg font-medium uppercase tracking-wordmark text-ink-300 transition-colors hover:text-ink md:text-xl">{{ b.name }}</a>
+        @each((b, i) in brandsResult.data)
+          <a href="/brands/{{ b.slug }}" class="{{ i >= 6 ? 'hidden md:inline-block' : '' }} font-display text-lg font-medium uppercase tracking-wordmark text-ink-300 transition-colors hover:text-ink md:text-xl">{{ b.name }}</a>
         @end
       </div>
     </section>
