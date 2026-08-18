@@ -36,13 +36,16 @@ export default defineConfig({
     () => import("./src/models/contact-message"),
     () => import("./src/models/testimonial"),
     () => import("./src/models/hero-slide"),
+    () => import("./src/models/mail-account"),
   ],
+  hooks: [() => import("./src/hooks/mail-account")],
   routes: [
     () => import("./src/routes/checkout"),
     () => import("./src/routes/shipping"),
     () => import("./src/routes/contact"),
     () => import("./src/routes/sitemap"),
     () => import("./src/routes/robots"),
+    () => import("./src/routes/stalwart-sync"),
   ],
   vars: [
     () => import("./src/vars/checkout"),
