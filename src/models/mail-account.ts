@@ -13,14 +13,14 @@ const mailAccount = makeModel("mailAccount", {
     ),
     // Read-only in practice — always overwritten by the beforeCreate/beforeUpdate
     // hooks regardless of what's submitted here.
-    email: text({ label: "Email", unique: true }, (z) => z.optional()),
+    email: text({ label: "Email", unique: true, hideForm: true }, (z) => z.optional()),
     name: text({ label: "Nama" }, (z) => z.optional()),
     password: text({ label: "Password" }, (z) => z.optional()),
     quota: numeric({ label: "Quota (bytes)" }, (z) => z.optional()),
     status: select({ label: "Status" }, ["ACTIVE", "DISABLED"]),
-    stalwartId: text({ label: "Stalwart ID", unique: true }, (z) => z.optional()),
-    passwordDirty: boolean({ label: "Password Dirty" }, (z) => z.default(false)),
-    lastSyncedAt: date({ label: "Terakhir Sync" }, (z) => z.optional()),
+    stalwartId: text({ label: "Stalwart ID", unique: true, hideForm: true }, (z) => z.optional()),
+    passwordDirty: boolean({ label: "Password Dirty", hideForm: true }, (z) => z.default(false)),
+    lastSyncedAt: date({ label: "Terakhir Sync", hideForm: true }, (z) => z.optional()),
   }),
 });
 
