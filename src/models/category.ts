@@ -6,7 +6,7 @@ const category = makeModel("category", {
   searchFields: ["name"],
   schema: z.object({
     name: text({ label: "Name" }),
-    slug: text({ label: "Slug", unique: true }),
+    slug: text({ label: "Slug", unique: true, hideForm: true }, (z) => z.optional()),
     image: file({ label: "Image" }, (z) => z.optional()),
   }),
 });

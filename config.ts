@@ -38,7 +38,7 @@ export default defineConfig({
     () => import("./src/models/hero-slide"),
     () => import("./src/models/mail-account"),
   ],
-  hooks: [() => import("./src/hooks/mail-account")],
+  hooks: [() => import("./src/hooks/mail-account"), () => import("./src/hooks/slug")],
   routes: [
     () => import("./src/routes/checkout"),
     () => import("./src/routes/shipping"),

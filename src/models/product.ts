@@ -5,10 +5,10 @@ import category from "./category";
 
 const product = makeModel("product", {
   name: "Product",
-  searchFields: ["name", "sku"],
+  searchFields: ["name", "sku", "category.name", "brand.name"],
   schema: z.object({
     name: text({ label: "Name" }),
-    slug: text({ label: "Slug", unique: true }),
+    slug: text({ label: "Slug", unique: true, hideForm: true }, (z) => z.optional()),
     brand: relation({ label: "Brand", labelKey: "name" }, brand),
     category: relation({ label: "Category", labelKey: "name" }, category),
     sku: text({ label: "SKU", unique: true }),
