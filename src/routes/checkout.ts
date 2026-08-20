@@ -48,7 +48,7 @@ export default route({ prefix: "/api/checkout" })
         });
         const p = result.data[0];
 
-        if (!p) {
+        if (!p || !p.slug) {
           return status(422, { message: `Produk "${line.slug}" sudah tidak tersedia` });
         }
 
@@ -56,7 +56,7 @@ export default route({ prefix: "/api/checkout" })
         resolvedItems.push({
           productSlug: p.slug,
           name: p.name,
-          brand: p.brand?.name ?? "",
+          brand: p.brand && "name" in p.brand ? (p.brand.name ?? "") : "",
           price: p.price,
           qty,
           subtotal: p.price * qty,
@@ -151,7 +151,7 @@ export default route({ prefix: "/api/checkout" })
 
       const invoice = (await res.json()) as { id: string; invoice_url: string };
 
-      await order.update(record.id.id, {
+      await order.update(record.id.id as string, {
         xenditInvoiceId: invoice.id,
         xenditInvoiceUrl: invoice.invoice_url,
       });
@@ -191,7 +191,7 @@ export default route({ prefix: "/api/checkout" })
       const existing = result.data[0];
       if (!existing) return { received: true };
 
-      await order.update(existing.id.id, {
+      await order.update(existing.id.id as string, {
         status: newStatus,
         ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
       });

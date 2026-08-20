@@ -1,4 +1,4 @@
-import { route } from "@njinlabs/njin";
+import { route, type FilterValue } from "@njinlabs/njin";
 import siteUrl from "../lib/site-url";
 import brand from "../models/brand";
 import category from "../models/category";
@@ -8,7 +8,7 @@ type UrlEntry = { loc: string; lastmod?: string; changefreq?: string; priority?:
 
 // `.read()` caps at limit 100 (see CLAUDE.md) — page through every record of a
 // model so the sitemap doesn't silently drop entries once a catalog grows past 100.
-const readAll = async (model: typeof product | typeof brand | typeof category, filters?: Record<string, unknown>) => {
+const readAll = async (model: typeof product | typeof brand | typeof category, filters?: Record<string, FilterValue>) => {
   const all: Array<{ slug: string; updatedAt: string }> = [];
   let page = 1;
 

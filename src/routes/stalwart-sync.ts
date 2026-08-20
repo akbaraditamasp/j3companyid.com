@@ -52,7 +52,7 @@ export default route().post("/api/stalwart/sync", async () => {
 
   // Only in njin (no stalwartId yet) → push create to Stalwart
   for (const njinAccount of njinAccounts) {
-    if (njinAccount.stalwartId) continue;
+    if (njinAccount.stalwartId || !njinAccount.email) continue;
 
     try {
       const created = await createAccount({
@@ -75,7 +75,7 @@ export default route().post("/api/stalwart/sync", async () => {
 
   // In both → reconcile
   for (const njinAccount of njinAccounts) {
-    if (!njinAccount.stalwartId) continue;
+    if (!njinAccount.stalwartId || !njinAccount.email) continue;
 
     const stalwartAccount = stalwartByEmail.get(njinAccount.email);
     if (!stalwartAccount) continue;

@@ -36,7 +36,19 @@ function saveJSON(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-Alpine.store("cart", {
+interface CartStore {
+  items: CartItem[];
+  save(): void;
+  readonly count: number;
+  readonly subtotal: number;
+  has(id: string): boolean;
+  add(product: CatalogItem, qty?: number): void;
+  setQty(id: string, qty: number): void;
+  remove(id: string): void;
+  clear(): void;
+}
+
+const cartStore: CartStore = {
   items: loadJSON<CartItem[]>(CART_KEY, []),
 
   save() {
@@ -85,9 +97,19 @@ Alpine.store("cart", {
     this.items = [];
     this.save();
   },
-});
+};
 
-Alpine.store("wishlist", {
+interface WishlistStore {
+  items: CatalogItem[];
+  save(): void;
+  readonly count: number;
+  has(id: string): boolean;
+  toggle(product: CatalogItem): void;
+  remove(id: string): void;
+  clear(): void;
+}
+
+const wishlistStore: WishlistStore = {
   items: loadJSON<CatalogItem[]>(WISHLIST_KEY, []),
 
   save() {
@@ -120,7 +142,10 @@ Alpine.store("wishlist", {
     this.items = [];
     this.save();
   },
-});
+};
+
+Alpine.store("cart", cartStore);
+Alpine.store("wishlist", wishlistStore);
 
 window.Alpine = Alpine;
 Alpine.start();

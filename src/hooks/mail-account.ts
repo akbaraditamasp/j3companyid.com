@@ -29,6 +29,7 @@ const syncing = new Set<string>();
 const pushToStalwart = async (record: Awaited<ReturnType<typeof mailAccount.create>>) => {
   const id = record.id.id as string;
   if (syncing.has(id)) return;
+  if (!record.email) return;
 
   syncing.add(id);
   try {
