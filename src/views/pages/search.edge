@@ -29,8 +29,6 @@
       ? await product.read({
           search: q,
           filters: { status: { $eq: 'PUBLISH' } },
-          sort: 'createdAt',
-          order: 'desc',
           limit: 12,
           page: page,
           populate: ['brand', 'thumbnail'],
