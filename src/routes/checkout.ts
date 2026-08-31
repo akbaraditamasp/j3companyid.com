@@ -6,9 +6,19 @@ import product from "../models/product";
 import checkoutVars from "../vars/checkout";
 import shippingVars from "../vars/shipping";
 import { calculateCost } from "../services/rajaongkir";
+import { createInvoice as createDokuInvoice, verifyNotificationSignature as verifyDokuSignature } from "../services/doku";
 
 const XENDIT_SECRET_KEY = process.env.XENDIT_SECRET_KEY ?? "";
 const XENDIT_CALLBACK_TOKEN = process.env.XENDIT_CALLBACK_TOKEN ?? "";
+
+const DOKU_WEBHOOK_PATH = "/api/checkout/webhook/doku";
+
+// DOKU Checkout notification "transaction.status" values -> our own order.status enum.
+const DOKU_STATUS_MAP: Record<string, "PAID" | "EXPIRED" | "FAILED"> = {
+  SUCCESS: "PAID",
+  EXPIRED: "EXPIRED",
+  FAILED: "FAILED",
+};
 
 const generateOrderNumber = () => {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -109,9 +119,48 @@ export default route({ prefix: "/api/checkout" })
         shippingEtd: matchedShipping.etd,
         total,
         status: "PENDING",
+        paymentGateway: body.paymentGateway,
       });
 
       const origin = new URL(request.url).origin;
+
+      if (body.paymentGateway === "DOKU") {
+        try {
+          const invoice = await createDokuInvoice({
+            invoiceNumber: orderNumber,
+            amount: total,
+            customerName: body.customerName,
+            customerEmail: body.customerEmail,
+            customerPhone: body.customerPhone,
+            lineItems: [
+              ...resolvedItems.map((i, idx) => ({
+                id: String(idx + 1),
+                name: i.brand ? `${i.brand} ${i.name}` : i.name,
+                quantity: i.qty,
+                price: i.price,
+              })),
+              ...(shippingCost > 0 ? [{ id: "shipping", name: "Ongkos Kirim", quantity: 1, price: shippingCost }] : []),
+            ],
+            // DOKU Checkout stays payable after one cancelled/failed attempt (only
+            // EXPIRED once payment_due_date elapses) — all three redirects point at
+            // the same order page, mirroring the Xendit success/failure_redirect_url
+            // behavior above.
+            callbackUrl: `${origin}/order/${orderNumber}`,
+            callbackUrlCancel: `${origin}/order/${orderNumber}`,
+            callbackUrlResult: `${origin}/order/${orderNumber}`,
+            notificationUrl: `${origin}${DOKU_WEBHOOK_PATH}`,
+          });
+
+          await order.update(record.id.id as string, {
+            dokuTokenId: invoice.tokenId,
+            dokuPaymentUrl: invoice.paymentUrl,
+          });
+
+          return { orderNumber, invoiceUrl: invoice.paymentUrl };
+        } catch {
+          return status(502, { message: "Gagal membuat invoice pembayaran, silakan coba lagi" });
+        }
+      }
 
       const res = await fetch("https://api.xendit.co/v2/invoices", {
         method: "POST",
@@ -169,6 +218,7 @@ export default route({ prefix: "/api/checkout" })
         courier: z.string().min(1),
         service: z.string().min(1),
         items: z.array(z.object({ slug: z.string(), qty: z.number().int().positive() })).min(1),
+        paymentGateway: z.enum(["XENDIT", "DOKU"]).default("XENDIT"),
       }),
     },
   )
@@ -201,5 +251,53 @@ export default route({ prefix: "/api/checkout" })
     {
       headers: z.object({ "x-callback-token": z.string() }),
       body: z.record(z.string(), z.any()),
+    },
+  )
+  .post(
+    "/webhook/doku",
+    async ({ request, headers }) => {
+      // No `body` schema declared on purpose — the DOKU signature's Digest is
+      // computed over the exact raw JSON bytes sent, so the body must be read
+      // as text before any parser touches (and reformats) it.
+      const rawBody = await request.text();
+
+      const valid = verifyDokuSignature({
+        clientId: headers["client-id"] ?? "",
+        requestId: headers["request-id"] ?? "",
+        timestamp: headers["request-timestamp"] ?? "",
+        target: DOKU_WEBHOOK_PATH,
+        rawBody,
+        receivedSignature: headers["signature"] ?? "",
+      });
+      if (!valid) {
+        return status(401, { message: "Invalid signature" });
+      }
+
+      const payload = JSON.parse(rawBody) as { order?: { invoice_number?: string }; transaction?: { status?: string } };
+      const invoiceNumber = payload.order?.invoice_number;
+      const dokuStatus = payload.transaction?.status;
+      if (!invoiceNumber || !dokuStatus) return { received: true };
+
+      const newStatus = DOKU_STATUS_MAP[dokuStatus];
+      if (!newStatus) return { received: true };
+
+      const result = await order.read({ filters: { orderNumber: { $eq: invoiceNumber } }, limit: 1 });
+      const existing = result.data[0];
+      if (!existing) return { received: true };
+
+      await order.update(existing.id.id as string, {
+        status: newStatus,
+        ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
+      });
+
+      return { received: true };
+    },
+    {
+      headers: z.object({
+        "client-id": z.string(),
+        "request-id": z.string(),
+        "request-timestamp": z.string(),
+        signature: z.string(),
+      }),
     },
   );

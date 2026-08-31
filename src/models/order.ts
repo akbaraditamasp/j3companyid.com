@@ -30,8 +30,11 @@ const order = makeModel("order", {
     shippingEtd: text({ label: "Estimated Delivery" }, (z) => z.optional()),
     total: numeric({ label: "Total" }),
     status: select({ label: "Status" }, ["PENDING", "PAID", "EXPIRED", "FAILED"]),
-    xenditInvoiceId: text({ label: "Xendit Invoice ID" }, (z) => z.optional()),
-    xenditInvoiceUrl: text({ label: "Xendit Invoice URL" }, (z) => z.optional()),
+    paymentGateway: select({ label: "Payment Gateway" }, ["XENDIT", "DOKU"], (z) => z.default("XENDIT")),
+    xenditInvoiceId: text({ label: "Xendit Invoice ID", hideForm: true }, (z) => z.optional()),
+    xenditInvoiceUrl: text({ label: "Xendit Invoice URL", hideForm: true }, (z) => z.optional()),
+    dokuTokenId: text({ label: "DOKU Token ID", hideForm: true }, (z) => z.optional()),
+    dokuPaymentUrl: text({ label: "DOKU Payment URL", hideForm: true }, (z) => z.optional()),
     paidAt: date({ label: "Paid At" }, (z) => z.optional()),
   }),
 });

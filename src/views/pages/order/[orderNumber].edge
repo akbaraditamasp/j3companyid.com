@@ -76,11 +76,13 @@
         </div>
       </div>
 
+      @let(paymentUrl = item.paymentGateway === 'DOKU' ? item.dokuPaymentUrl : item.xenditInvoiceUrl)
+
       @if(item.status === 'PENDING')
         <div class="mt-8 border border-ink-100 bg-bone px-6 py-5">
           <p class="text-sm text-ink-700">Pesanan Anda telah dibuat. Selesaikan pembayaran untuk memproses pesanan.</p>
           <a
-            href="{{ item.xenditInvoiceUrl }}"
+            href="{{ paymentUrl }}"
             class="mt-4 inline-flex items-center gap-2 bg-ink px-6 py-3 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand"
           >
             Bayar Sekarang

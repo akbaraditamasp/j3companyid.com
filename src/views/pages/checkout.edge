@@ -37,6 +37,7 @@
         loading: false,
         error: '',
         form: { customerName: '', customerEmail: '', customerPhone: '', shippingAddress: '' },
+        paymentGateway: 'XENDIT',
         destinationQuery: '',
         destinationResults: [],
         destination: null,
@@ -105,6 +106,7 @@
                 courier: this.selectedQuote.code,
                 service: this.selectedQuote.service,
                 items: this.cartItems(),
+                paymentGateway: this.paymentGateway,
               }),
             });
             const data = await res.json();
@@ -250,6 +252,31 @@
                   <span class="shrink-0 font-sans font-semibold text-ink" x-text="'Rp ' + q.cost.toLocaleString('id-ID')"></span>
                 </button>
               </template>
+            </div>
+
+            {{-- Payment method --}}
+            <div class="space-y-3">
+              <p class="font-display text-[11px] uppercase tracking-label text-ink-500">Metode Pembayaran</p>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  @click="paymentGateway = 'XENDIT'"
+                  class="border px-4 py-3 text-left text-sm transition-colors"
+                  :class="paymentGateway === 'XENDIT' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
+                >
+                  <p class="font-medium text-ink">Xendit</p>
+                  <p class="text-xs text-ink-500">VA, e-wallet, QRIS, kartu</p>
+                </button>
+                <button
+                  type="button"
+                  @click="paymentGateway = 'DOKU'"
+                  class="border px-4 py-3 text-left text-sm transition-colors"
+                  :class="paymentGateway === 'DOKU' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
+                >
+                  <p class="font-medium text-ink">DOKU</p>
+                  <p class="text-xs text-ink-500">VA, e-wallet, QRIS, kartu</p>
+                </button>
+              </div>
             </div>
 
             <div x-show="error" x-text="error" class="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"></div>
