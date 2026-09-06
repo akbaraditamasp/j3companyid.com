@@ -9,6 +9,8 @@ const checkout = makeVars("checkout", {
       z.default("Ongkos kirim dihitung otomatis berdasarkan berat produk dan kota tujuan."),
     ),
     invoiceDescription: text({ label: "Invoice Description Prefix" }, (z) => z.default("J3 Company Order")),
+    xenditEnabled: boolean({ label: "Xendit Enabled" }, (z) => z.default(true)),
+    dokuEnabled: boolean({ label: "DOKU Enabled" }, (z) => z.default(true)),
   }),
 });
 

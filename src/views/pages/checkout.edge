@@ -31,13 +31,15 @@
     @!component('components/header', { transparent: false, path: request.path })
 
     @let(settings = await checkout.get())
+    @let(defaultGateway = settings.xenditEnabled ? 'XENDIT' : (settings.dokuEnabled ? 'DOKU' : ''))
+    @let(noGatewayAvailable = !settings.xenditEnabled && !settings.dokuEnabled)
 
     <div
       x-data="{
         loading: false,
         error: '',
         form: { customerName: '', customerEmail: '', customerPhone: '', shippingAddress: '' },
-        paymentGateway: 'XENDIT',
+        paymentGateway: '{{ defaultGateway }}',
         destinationQuery: '',
         destinationResults: [],
         destination: null,
@@ -144,6 +146,10 @@
           <div class="mt-6 border border-ink-100 bg-bone px-5 py-4 text-sm text-ink-700">
             Checkout sedang tidak tersedia saat ini. Silakan coba lagi nanti.
           </div>
+        @elseif(noGatewayAvailable)
+          <div class="mt-6 border border-ink-100 bg-bone px-5 py-4 text-sm text-ink-700">
+            Metode pembayaran sedang tidak tersedia. Silakan coba lagi nanti.
+          </div>
         @end
 
         {{-- Empty state --}}
@@ -160,7 +166,7 @@
         </div>
 
         {{-- Form + summary --}}
-        @if(settings.enabled)
+        @if(settings.enabled && !noGatewayAvailable)
         <div x-show="$store.cart.items.length > 0" class="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-16">
           <form @submit.prevent="submit()" class="space-y-6 lg:col-span-2">
             <div>
@@ -257,25 +263,29 @@
             {{-- Payment method --}}
             <div class="space-y-3">
               <p class="font-display text-[11px] uppercase tracking-label text-ink-500">Metode Pembayaran</p>
-              <div class="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  @click="paymentGateway = 'XENDIT'"
-                  class="border px-4 py-3 text-left text-sm transition-colors"
-                  :class="paymentGateway === 'XENDIT' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
-                >
-                  <p class="font-medium text-ink">Xendit</p>
-                  <p class="text-xs text-ink-500">VA, e-wallet, QRIS, kartu</p>
-                </button>
-                <button
-                  type="button"
-                  @click="paymentGateway = 'DOKU'"
-                  class="border px-4 py-3 text-left text-sm transition-colors"
-                  :class="paymentGateway === 'DOKU' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
-                >
-                  <p class="font-medium text-ink">DOKU</p>
-                  <p class="text-xs text-ink-500">VA, e-wallet, QRIS, kartu</p>
-                </button>
+              <div class="grid gap-3 {{ settings.xenditEnabled && settings.dokuEnabled ? 'grid-cols-2' : 'grid-cols-1' }}">
+                @if(settings.xenditEnabled)
+                  <button
+                    type="button"
+                    @click="paymentGateway = 'XENDIT'"
+                    class="border px-4 py-3 text-left text-sm transition-colors"
+                    :class="paymentGateway === 'XENDIT' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
+                  >
+                    <p class="font-medium text-ink">Xendit</p>
+                    <p class="text-xs text-ink-500">VA, e-wallet, QRIS, kartu</p>
+                  </button>
+                @end
+                @if(settings.dokuEnabled)
+                  <button
+                    type="button"
+                    @click="paymentGateway = 'DOKU'"
+                    class="border px-4 py-3 text-left text-sm transition-colors"
+                    :class="paymentGateway === 'DOKU' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
+                  >
+                    <p class="font-medium text-ink">DOKU</p>
+                    <p class="text-xs text-ink-500">VA, e-wallet, QRIS, kartu</p>
+                  </button>
+                @end
               </div>
             </div>
 

@@ -44,6 +44,11 @@ export default route({ prefix: "/api/checkout" })
         return status(503, { message: "Checkout sedang tidak tersedia, silakan coba lagi nanti" });
       }
 
+      const gatewayEnabled = body.paymentGateway === "DOKU" ? settings.dokuEnabled : settings.xenditEnabled;
+      if (!gatewayEnabled) {
+        return status(422, { message: "Metode pembayaran yang dipilih sedang tidak tersedia" });
+      }
+
       // Server recomputes name/brand/price from the real product record for every line —
       // a client-submitted price/name is never trusted. Also refuses anything an admin
       // already hid (status flipped away from PUBLISH after a one-off item sold).
