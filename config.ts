@@ -33,12 +33,17 @@ export default defineConfig({
     () => import("./src/models/category"),
     () => import("./src/models/product"),
     () => import("./src/models/order"),
+    () => import("./src/models/manual-invoice"),
     () => import("./src/models/contact-message"),
     () => import("./src/models/testimonial"),
     () => import("./src/models/hero-slide"),
     () => import("./src/models/mail-account"),
   ],
-  hooks: [() => import("./src/hooks/mail-account"), () => import("./src/hooks/slug")],
+  hooks: [
+    () => import("./src/hooks/mail-account"),
+    () => import("./src/hooks/slug"),
+    () => import("./src/hooks/manual-invoice"),
+  ],
   routes: [
     () => import("./src/routes/checkout"),
     () => import("./src/routes/shipping"),

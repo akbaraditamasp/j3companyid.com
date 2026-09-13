@@ -2,6 +2,7 @@ import { route } from "@njinlabs/njin";
 import { status } from "elysia";
 import z from "zod";
 import order from "../models/order";
+import manualInvoice from "../models/manual-invoice";
 import product from "../models/product";
 import checkoutVars from "../vars/checkout";
 import shippingVars from "../vars/shipping";
@@ -11,7 +12,9 @@ import { createInvoice as createDokuInvoice, verifyNotificationSignature as veri
 const XENDIT_SECRET_KEY = process.env.XENDIT_SECRET_KEY ?? "";
 const XENDIT_CALLBACK_TOKEN = process.env.XENDIT_CALLBACK_TOKEN ?? "";
 
-const DOKU_WEBHOOK_PATH = "/api/checkout/webhook/doku";
+// Shared with src/hooks/manual-invoice.ts, which points DOKU's
+// override_notification_url at this same path for manual invoices.
+export const DOKU_WEBHOOK_PATH = "/api/checkout/webhook/doku";
 
 // DOKU Checkout notification "transaction.status" values -> our own order.status enum.
 const DOKU_STATUS_MAP: Record<string, "PAID" | "EXPIRED" | "FAILED"> = {
@@ -286,14 +289,26 @@ export default route({ prefix: "/api/checkout" })
       const newStatus = DOKU_STATUS_MAP[dokuStatus];
       if (!newStatus) return { received: true };
 
-      const result = await order.read({ filters: { orderNumber: { $eq: invoiceNumber } }, limit: 1 });
-      const existing = result.data[0];
-      if (!existing) return { received: true };
+      const orderResult = await order.read({ filters: { orderNumber: { $eq: invoiceNumber } }, limit: 1 });
+      const existingOrder = orderResult.data[0];
+      if (existingOrder) {
+        await order.update(existingOrder.id.id as string, {
+          status: newStatus,
+          ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
+        });
+        return { received: true };
+      }
 
-      await order.update(existing.id.id as string, {
-        status: newStatus,
-        ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
-      });
+      // Same notification path is reused for admin-generated manual invoices
+      // (src/hooks/manual-invoice.ts) — check that model when no order matches.
+      const invoiceResult = await manualInvoice.read({ filters: { invoiceNumber: { $eq: invoiceNumber } }, limit: 1 });
+      const existingInvoice = invoiceResult.data[0];
+      if (existingInvoice) {
+        await manualInvoice.update(existingInvoice.id.id as string, {
+          status: newStatus,
+          ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
+        });
+      }
 
       return { received: true };
     },
