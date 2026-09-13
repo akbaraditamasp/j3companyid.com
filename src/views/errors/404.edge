@@ -2,7 +2,7 @@
   Halaman 404 kustom — mengikuti tone desain situs (font-display uppercase,
   palet ink/brand/bone, header + footer standar).
 --}}
-@component('layouts/main', { path: request.path })
+@component('layouts/main', { path: '/404' })
   @slot('title')
     Halaman Tidak Ditemukan — J3 Company
   @end
@@ -16,7 +16,7 @@
   @end
 
   @slot('main')
-    @!component('components/header', { transparent: false, path: request.path })
+    @!component('components/header', { transparent: false, path: '/404' })
 
     <section class="mx-auto flex min-h-[70vh] max-w-350 flex-col items-center justify-center px-5 py-24 text-center md:px-8">
       <p class="font-display text-[11px] font-medium uppercase tracking-label text-brand">Error 404</p>
