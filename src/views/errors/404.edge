@@ -1,0 +1,50 @@
+{{--
+  Halaman 404 kustom — mengikuti tone desain situs (font-display uppercase,
+  palet ink/brand/bone, header + footer standar).
+--}}
+@component('layouts/main', { path: request.path })
+  @slot('title')
+    Halaman Tidak Ditemukan — J3 Company
+  @end
+
+  @slot('description')
+    Halaman yang Anda cari tidak tersedia atau sudah dipindahkan.
+  @end
+
+  @slot('robots')
+    noindex, follow
+  @end
+
+  @slot('main')
+    @!component('components/header', { transparent: false, path: request.path })
+
+    <section class="mx-auto flex min-h-[70vh] max-w-350 flex-col items-center justify-center px-5 py-24 text-center md:px-8">
+      <p class="font-display text-[11px] font-medium uppercase tracking-label text-brand">Error 404</p>
+
+      <h1 class="mt-4 font-display text-7xl font-semibold uppercase leading-[0.9] tracking-tight text-ink sm:text-8xl lg:text-9xl">
+        Lost
+      </h1>
+
+      <p class="mt-6 max-w-md text-sm leading-relaxed text-ink-500">
+        Halaman yang Anda cari sudah tidak ada di rak, atau memang belum pernah kami pajang. Coba kembali ke koleksi utama.
+      </p>
+
+      <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+        <a
+          href="/"
+          class="group inline-flex items-center gap-2 bg-ink px-8 py-3.5 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand"
+        >
+          Kembali ke Beranda
+          <iconify-icon icon="lucide:arrow-right" class="size-3.5 text-[0.875rem] transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"></iconify-icon>
+        </a>
+
+        <a
+          href="/shop"
+          class="inline-flex items-center gap-2 border border-ink-100 px-8 py-3.5 font-display text-xs font-medium uppercase tracking-label text-ink transition-colors duration-300 hover:border-ink hover:text-brand"
+        >
+          Jelajahi Koleksi
+        </a>
+      </div>
+    </section>
+  @end
+@end
