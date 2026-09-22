@@ -6,6 +6,7 @@ import manualInvoice from "../models/manual-invoice";
 import product from "../models/product";
 import checkoutVars from "../vars/checkout";
 import shippingVars from "../vars/shipping";
+import internationalShippingRate from "../models/international-shipping-rate";
 import { calculateCost } from "../services/rajaongkir";
 import { createInvoice as createDokuInvoice, verifyNotificationSignature as verifyDokuSignature } from "../services/doku";
 
@@ -84,30 +85,72 @@ export default route({ prefix: "/api/checkout" })
 
       const subtotal = resolvedItems.reduce((sum, i) => sum + i.subtotal, 0);
 
-      // Shipping cost is recomputed here, server-side, from a fresh RajaOngkir quote —
-      // this is the last point before the Xendit invoice amount is fixed, and the same
-      // trust boundary already applied to product price: the client only ever *displays*
-      // a cost from POST /api/shipping/quote, never supplies one that gets charged.
-      const shippingSettings = await shippingVars.get();
-      if (!shippingSettings.originAreaId) {
-        return status(503, { message: "Pengiriman belum dikonfigurasi" });
+      // Shipping cost is recomputed here, server-side, right before the invoice amount is
+      // fixed — this is the same trust boundary already applied to product price: the
+      // client only ever *displays* a cost from POST /api/shipping/quote(-international),
+      // never supplies one that gets charged.
+      let shippingCost: number;
+      let shippingDestinationId: number | undefined;
+      let shippingDestinationLabel: string;
+      let shippingCourier: string;
+      let shippingService: string;
+      let shippingEtd: string | undefined;
+
+      if (body.shippingType === "INTERNATIONAL") {
+        if (!body.country) {
+          return status(422, { message: "Negara tujuan wajib diisi" });
+        }
+
+        const totalWeightKg = totalWeight / 1000;
+        const rates = await internationalShippingRate.read({
+          filters: { country: { $eq: body.country } },
+          limit: 100,
+          populate: "none",
+        });
+        const matched = rates.data.find((r) => totalWeightKg >= r.minWeight && totalWeightKg <= r.maxWeight);
+
+        if (!matched) {
+          return status(422, { message: "Opsi pengiriman internasional tidak lagi tersedia, silakan pilih ulang" });
+        }
+
+        shippingCost = matched.price;
+        shippingDestinationId = undefined;
+        shippingDestinationLabel = body.country;
+        shippingCourier = "Internasional";
+        shippingService = "Flat Rate";
+        shippingEtd = undefined;
+      } else {
+        if (!body.destinationAreaId || !body.destinationLabel || !body.courier || !body.service) {
+          return status(422, { message: "Tujuan dan kurir pengiriman wajib diisi" });
+        }
+
+        const shippingSettings = await shippingVars.get();
+        if (!shippingSettings.originAreaId) {
+          return status(503, { message: "Pengiriman belum dikonfigurasi" });
+        }
+
+        const shippingOptions = await calculateCost({
+          origin: shippingSettings.originAreaId,
+          destination: body.destinationAreaId,
+          weight: totalWeight,
+          couriers: [body.courier],
+        });
+        const matchedShipping = shippingOptions.find(
+          (o) => o.code === body.courier && o.service.toLowerCase() === body.service!.toLowerCase(),
+        );
+
+        if (!matchedShipping) {
+          return status(422, { message: "Opsi pengiriman tidak lagi tersedia, silakan pilih ulang" });
+        }
+
+        shippingCost = matchedShipping.cost;
+        shippingDestinationId = body.destinationAreaId;
+        shippingDestinationLabel = body.destinationLabel;
+        shippingCourier = matchedShipping.code;
+        shippingService = matchedShipping.service;
+        shippingEtd = matchedShipping.etd;
       }
 
-      const shippingOptions = await calculateCost({
-        origin: shippingSettings.originAreaId,
-        destination: body.destinationAreaId,
-        weight: totalWeight,
-        couriers: [body.courier],
-      });
-      const matchedShipping = shippingOptions.find(
-        (o) => o.code === body.courier && o.service.toLowerCase() === body.service.toLowerCase(),
-      );
-
-      if (!matchedShipping) {
-        return status(422, { message: "Opsi pengiriman tidak lagi tersedia, silakan pilih ulang" });
-      }
-
-      const shippingCost = matchedShipping.cost;
       const total = subtotal + shippingCost;
       const orderNumber = generateOrderNumber();
 
@@ -120,11 +163,12 @@ export default route({ prefix: "/api/checkout" })
         items: resolvedItems,
         subtotal,
         shippingCost,
-        shippingDestinationId: body.destinationAreaId,
-        shippingDestinationLabel: body.destinationLabel,
-        shippingCourier: matchedShipping.code,
-        shippingService: matchedShipping.service,
-        shippingEtd: matchedShipping.etd,
+        shippingType: body.shippingType,
+        shippingDestinationId,
+        shippingDestinationLabel,
+        shippingCourier,
+        shippingService,
+        shippingEtd,
         total,
         status: "PENDING",
         paymentGateway: body.paymentGateway,
@@ -221,10 +265,14 @@ export default route({ prefix: "/api/checkout" })
         customerEmail: z.email(),
         customerPhone: z.string().min(1),
         shippingAddress: z.string().min(1),
-        destinationAreaId: z.number().int().positive(),
-        destinationLabel: z.string().min(1),
-        courier: z.string().min(1),
-        service: z.string().min(1),
+        shippingType: z.enum(["DOMESTIC", "INTERNATIONAL"]).default("DOMESTIC"),
+        // Domestic (RajaOngkir) fields — required when shippingType is DOMESTIC, checked below.
+        destinationAreaId: z.number().int().positive().optional(),
+        destinationLabel: z.string().min(1).optional(),
+        courier: z.string().min(1).optional(),
+        service: z.string().min(1).optional(),
+        // International (flat-rate table) field — required when shippingType is INTERNATIONAL.
+        country: z.string().min(1).optional(),
         items: z.array(z.object({ slug: z.string(), qty: z.number().int().positive() })).min(1),
         paymentGateway: z.enum(["XENDIT", "DOKU"]).default("XENDIT"),
       }),

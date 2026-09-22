@@ -33,6 +33,7 @@ export default defineConfig({
     () => import("./src/models/category"),
     () => import("./src/models/product"),
     () => import("./src/models/order"),
+    () => import("./src/models/international-shipping-rate"),
     () => import("./src/models/manual-invoice"),
     () => import("./src/models/contact-message"),
     () => import("./src/models/testimonial"),

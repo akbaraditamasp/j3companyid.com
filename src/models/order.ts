@@ -23,6 +23,7 @@ const order = makeModel("order", {
     ),
     subtotal: numeric({ label: "Subtotal" }),
     shippingCost: numeric({ label: "Shipping Cost" }, (z) => z.default(0)),
+    shippingType: select({ label: "Shipping Type" }, ["DOMESTIC", "INTERNATIONAL"], (z) => z.default("DOMESTIC")),
     shippingDestinationId: numeric({ label: "Shipping Destination ID" }, (z) => z.optional()),
     shippingDestinationLabel: text({ label: "Shipping Destination Label" }, (z) => z.optional()),
     shippingCourier: text({ label: "Shipping Courier" }, (z) => z.optional()),

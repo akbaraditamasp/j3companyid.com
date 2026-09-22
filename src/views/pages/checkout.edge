@@ -40,12 +40,15 @@
         error: '',
         form: { customerName: '', customerEmail: '', customerPhone: '', shippingAddress: '' },
         paymentGateway: '{{ defaultGateway }}',
+        shippingType: 'DOMESTIC',
         destinationQuery: '',
         destinationResults: [],
         destination: null,
         quotes: [],
         quotesLoading: false,
         selectedQuote: null,
+        countries: [],
+        selectedCountry: '',
         cartItems() {
           return $store.cart.items.map((i) => ({ slug: i.href.split('/').pop(), qty: i.qty }));
         },
@@ -92,10 +95,62 @@
             this.quotesLoading = false;
           }
         },
+        async fetchCountries() {
+          try {
+            const res = await fetch('/api/shipping/countries');
+            const data = await res.json();
+            this.countries = res.ok ? data.data : [];
+          } catch (e) {
+            this.countries = [];
+          }
+        },
+        async fetchInternationalQuote() {
+          this.selectedQuote = null;
+          if (!this.selectedCountry || $store.cart.items.length === 0) return;
+          this.quotesLoading = true;
+          try {
+            const res = await fetch('/api/shipping/quote-international', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ country: this.selectedCountry, items: this.cartItems() }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              this.error = data.message || 'Gagal mengambil ongkos kirim internasional.';
+              this.selectedQuote = null;
+            } else {
+              this.selectedQuote = { code: 'INTL', service: 'Flat Rate', name: 'Pengiriman Internasional', cost: data.data.price, etd: '' };
+            }
+          } catch (e) {
+            this.selectedQuote = null;
+          } finally {
+            this.quotesLoading = false;
+          }
+        },
+        switchShippingType(type) {
+          this.shippingType = type;
+          this.error = '';
+          this.selectedQuote = null;
+          if (type === 'DOMESTIC') {
+            this.selectedCountry = '';
+          } else {
+            this.destination = null;
+            this.destinationQuery = '';
+            this.destinationResults = [];
+            if (this.countries.length === 0) this.fetchCountries();
+          }
+        },
         async submit() {
           this.error = '';
           if ($store.cart.items.length === 0) { this.error = 'Keranjang Anda kosong.'; return; }
-          if (!this.destination || !this.selectedQuote) { this.error = 'Pilih kota tujuan dan metode pengiriman terlebih dahulu.'; return; }
+          if (this.shippingType === 'DOMESTIC' && (!this.destination || !this.selectedQuote)) {
+            this.error = 'Pilih kota tujuan dan metode pengiriman terlebih dahulu.';
+            return;
+          }
+          if (this.shippingType === 'INTERNATIONAL' && (!this.selectedCountry || !this.selectedQuote)) {
+            this.error = 'Pilih negara tujuan terlebih dahulu.';
+            return;
+          }
           this.loading = true;
           try {
             const res = await fetch('/api/checkout', {
@@ -103,10 +158,15 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 ...this.form,
-                destinationAreaId: this.destination.id,
-                destinationLabel: this.destination.label,
-                courier: this.selectedQuote.code,
-                service: this.selectedQuote.service,
+                shippingType: this.shippingType,
+                ...(this.shippingType === 'INTERNATIONAL'
+                  ? { country: this.selectedCountry }
+                  : {
+                      destinationAreaId: this.destination.id,
+                      destinationLabel: this.destination.label,
+                      courier: this.selectedQuote.code,
+                      service: this.selectedQuote.service,
+                    }),
                 items: this.cartItems(),
                 paymentGateway: this.paymentGateway,
               }),
@@ -215,15 +275,40 @@
               <p class="mt-2 text-xs text-ink-500">{{ settings.shippingNotice }}</p>
             </div>
 
-            {{-- Destination autocomplete --}}
-            <div class="relative">
+            {{-- Shipping destination type --}}
+            <div class="space-y-3">
+              <p class="font-display text-[11px] uppercase tracking-label text-ink-500">Tujuan Pengiriman</p>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  @click="switchShippingType('DOMESTIC')"
+                  class="border px-4 py-3 text-left text-sm transition-colors"
+                  :class="shippingType === 'DOMESTIC' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
+                >
+                  <p class="font-medium text-ink">Dalam Negeri</p>
+                  <p class="text-xs text-ink-500">Dihitung otomatis via kurir</p>
+                </button>
+                <button
+                  type="button"
+                  @click="switchShippingType('INTERNATIONAL')"
+                  class="border px-4 py-3 text-left text-sm transition-colors"
+                  :class="shippingType === 'INTERNATIONAL' ? 'border-ink bg-bone' : 'border-ink-100 hover:border-ink-300'"
+                >
+                  <p class="font-medium text-ink">Luar Negeri</p>
+                  <p class="text-xs text-ink-500">Tarif flat per negara</p>
+                </button>
+              </div>
+            </div>
+
+            {{-- Destination autocomplete (domestic) --}}
+            <div x-show="shippingType === 'DOMESTIC'" class="relative">
               <label class="font-display text-[11px] uppercase tracking-label text-ink-500" for="destination">Kota/Kecamatan Tujuan</label>
               <input
                 id="destination"
                 x-model="destinationQuery"
                 @input.debounce.400ms="searchDestination()"
                 @focus="if (destination) { destination = null; selectedQuote = null; quotes = [] }"
-                required
+                :required="shippingType === 'DOMESTIC'"
                 type="text"
                 autocomplete="off"
                 placeholder="mis. Kemayoran, Jakarta Pusat"
@@ -239,8 +324,8 @@
               </div>
             </div>
 
-            {{-- Shipping quotes --}}
-            <div x-show="destination" class="space-y-3">
+            {{-- Shipping quotes (domestic) --}}
+            <div x-show="shippingType === 'DOMESTIC' && destination" class="space-y-3">
               <p class="font-display text-[11px] uppercase tracking-label text-ink-500">Metode Pengiriman</p>
               <div x-show="quotesLoading" class="text-sm text-ink-500">Memuat ongkos kirim...</div>
               <div x-show="!quotesLoading && quotes.length === 0" class="text-sm text-ink-500">Tidak ada opsi pengiriman untuk tujuan ini.</div>
@@ -258,6 +343,37 @@
                   <span class="shrink-0 font-sans font-semibold text-ink" x-text="'Rp ' + q.cost.toLocaleString('id-ID')"></span>
                 </button>
               </template>
+            </div>
+
+            {{-- Country select (international) --}}
+            <div x-show="shippingType === 'INTERNATIONAL'" class="space-y-3">
+              <div>
+                <label class="font-display text-[11px] uppercase tracking-label text-ink-500" for="country">Negara Tujuan</label>
+                <select
+                  id="country"
+                  x-model="selectedCountry"
+                  @change="fetchInternationalQuote()"
+                  :required="shippingType === 'INTERNATIONAL'"
+                  class="mt-2 w-full border border-ink-100 px-4 py-3 text-sm text-ink focus:border-ink focus:outline-none"
+                >
+                  <option value="">Pilih negara</option>
+                  <template x-for="c in countries" :key="c">
+                    <option :value="c" x-text="c"></option>
+                  </template>
+                </select>
+                <p x-show="countries.length === 0" class="mt-2 text-xs text-ink-500">Memuat daftar negara...</p>
+              </div>
+
+              <div x-show="selectedCountry" class="space-y-3">
+                <div x-show="quotesLoading" class="text-sm text-ink-500">Menghitung ongkos kirim...</div>
+                <div x-show="!quotesLoading && selectedQuote" class="flex items-center justify-between gap-4 border border-ink bg-bone px-4 py-3 text-left text-sm">
+                  <div>
+                    <p class="font-medium text-ink">Pengiriman Internasional</p>
+                    <p class="text-xs text-ink-500">Tarif flat ke <span x-text="selectedCountry"></span></p>
+                  </div>
+                  <span class="shrink-0 font-sans font-semibold text-ink" x-text="selectedQuote ? 'Rp ' + selectedQuote.cost.toLocaleString('id-ID') : ''"></span>
+                </div>
+              </div>
             </div>
 
             {{-- Payment method --}}
@@ -293,7 +409,7 @@
 
             <button
               type="submit"
-              :disabled="loading || !destination || !selectedQuote"
+              :disabled="loading || (shippingType === 'DOMESTIC' ? (!destination || !selectedQuote) : (!selectedCountry || !selectedQuote))"
               class="flex w-full items-center justify-center gap-2 bg-ink px-6 py-3.5 font-display text-xs font-medium uppercase tracking-label text-white transition-colors duration-300 hover:bg-brand disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span x-show="!loading">Buat Pesanan</span>
