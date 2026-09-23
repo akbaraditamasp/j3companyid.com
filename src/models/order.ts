@@ -37,6 +37,10 @@ const order = makeModel("order", {
     dokuTokenId: text({ label: "DOKU Token ID", hideForm: true }, (z) => z.optional()),
     dokuPaymentUrl: text({ label: "DOKU Payment URL", hideForm: true }, (z) => z.optional()),
     paidAt: date({ label: "Paid At" }, (z) => z.optional()),
+    // Raw error message from the payment gateway when invoice creation fails — the
+    // production server has no log access, so this is the only place to see *why*
+    // a checkout attempt failed without reproducing it locally.
+    paymentError: text({ label: "Payment Error", hideForm: true }, (z) => z.optional()),
   }),
 });
 

@@ -85,7 +85,10 @@ export const createInvoice = async (params: CreateInvoiceParams): Promise<Create
     body,
   });
 
-  if (!res.ok) throw new Error(`DOKU checkout request failed (${res.status})`);
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => "");
+    throw new Error(`DOKU checkout request failed (${res.status}): ${errorBody}`);
+  }
 
   const json = (await res.json()) as { response: { payment: { url: string; token_id: string } } };
   return { paymentUrl: json.response.payment.url, tokenId: json.response.payment.token_id };

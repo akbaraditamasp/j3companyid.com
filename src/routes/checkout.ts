@@ -211,7 +211,9 @@ export default route({ prefix: "/api/checkout" })
 
           return { orderNumber, invoiceUrl: invoice.paymentUrl };
         } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
           console.error(`[doku] failed to create invoice for order "${orderNumber}":`, err);
+          await order.update(record.id.id as string, { paymentError: message });
           return status(502, { message: "Gagal membuat invoice pembayaran, silakan coba lagi" });
         }
       }
@@ -249,7 +251,9 @@ export default route({ prefix: "/api/checkout" })
       });
 
       if (!res.ok) {
-        console.error(`[xendit] failed to create invoice for order "${orderNumber}" (${res.status}):`, await res.text());
+        const errorBody = await res.text().catch(() => "");
+        console.error(`[xendit] failed to create invoice for order "${orderNumber}" (${res.status}):`, errorBody);
+        await order.update(record.id.id as string, { paymentError: `Xendit request failed (${res.status}): ${errorBody}` });
         return status(502, { message: "Gagal membuat invoice pembayaran, silakan coba lagi" });
       }
 
