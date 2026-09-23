@@ -39,7 +39,9 @@ const order = makeModel("order", {
     paidAt: date({ label: "Paid At" }, (z) => z.optional()),
     // Raw error message from the payment gateway when invoice creation fails — the
     // production server has no log access, so this is the only place to see *why*
-    // a checkout attempt failed without reproducing it locally.
+    // a checkout attempt failed without reproducing it locally. hideForm just keeps
+    // it out of the admin panel's generated form/schema — the data is still returned
+    // by GET /api/order/:id, so it's visible via browser devtools network inspect.
     paymentError: text({ label: "Payment Error", hideForm: true }, (z) => z.optional()),
   }),
 });
