@@ -9,6 +9,7 @@ import shippingVars from "../vars/shipping";
 import internationalShippingRate from "../models/international-shipping-rate";
 import { calculateCost } from "../services/rajaongkir";
 import { createInvoice as createDokuInvoice, verifyNotificationSignature as verifyDokuSignature } from "../services/doku";
+import siteUrl from "../lib/site-url";
 
 const XENDIT_SECRET_KEY = process.env.XENDIT_SECRET_KEY ?? "";
 const XENDIT_CALLBACK_TOKEN = process.env.XENDIT_CALLBACK_TOKEN ?? "";
@@ -42,7 +43,7 @@ const XENDIT_STATUS_MAP: Record<string, "PAID" | "EXPIRED" | "FAILED"> = {
 export default route({ prefix: "/api/checkout" })
   .post(
     "/",
-    async ({ body, request }) => {
+    async ({ body }) => {
       const settings = await checkoutVars.get();
       if (!settings.enabled) {
         return status(503, { message: "Checkout sedang tidak tersedia, silakan coba lagi nanti" });
@@ -174,7 +175,7 @@ export default route({ prefix: "/api/checkout" })
         paymentGateway: body.paymentGateway,
       });
 
-      const origin = new URL(request.url).origin;
+      const origin = siteUrl();
 
       if (body.paymentGateway === "DOKU") {
         try {
@@ -209,7 +210,8 @@ export default route({ prefix: "/api/checkout" })
           });
 
           return { orderNumber, invoiceUrl: invoice.paymentUrl };
-        } catch {
+        } catch (err) {
+          console.error(`[doku] failed to create invoice for order "${orderNumber}":`, err);
           return status(502, { message: "Gagal membuat invoice pembayaran, silakan coba lagi" });
         }
       }
@@ -247,6 +249,7 @@ export default route({ prefix: "/api/checkout" })
       });
 
       if (!res.ok) {
+        console.error(`[xendit] failed to create invoice for order "${orderNumber}" (${res.status}):`, await res.text());
         return status(502, { message: "Gagal membuat invoice pembayaran, silakan coba lagi" });
       }
 
