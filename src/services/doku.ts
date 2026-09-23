@@ -15,6 +15,17 @@ const CHECKOUT_PATH = "/checkout/v1/payment";
 
 const digest = (rawBody: string) => createHash("sha256").update(rawBody).digest("base64");
 
+// DOKU's Checkout API rejects order/customer text fields containing any character
+// outside `a-z A-Z 0-9 . - / + , = _ : ' @ % ( )` (plus whitespace) with a 400 —
+// product/brand names and customer-entered name/phone routinely contain characters
+// outside that set (&, curly quotes, em dashes, ™/®, etc), so strip anything DOKU
+// would reject before it ever reaches the request body.
+const sanitizeDokuText = (text: string) =>
+  text
+    .replace(/[^a-zA-Z0-9.\-/+,=_:'@%() \t\n]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const signature = (params: { requestId: string; timestamp: string; target: string; digestValue: string }) => {
   const stringToSign = [
     `Client-Id:${CLIENT_ID}`,
@@ -54,15 +65,15 @@ export const createInvoice = async (params: CreateInvoiceParams): Promise<Create
       callback_url: params.callbackUrl,
       callback_url_cancel: params.callbackUrlCancel,
       callback_url_result: params.callbackUrlResult,
-      line_items: params.lineItems,
+      line_items: params.lineItems.map((item) => ({ ...item, name: sanitizeDokuText(item.name) })),
     },
     payment: {
       payment_due_date: 60,
     },
     customer: {
-      name: params.customerName,
+      name: sanitizeDokuText(params.customerName),
       email: params.customerEmail,
-      phone: params.customerPhone,
+      phone: sanitizeDokuText(params.customerPhone),
     },
     additional_info: {
       override_notification_url: params.notificationUrl,
