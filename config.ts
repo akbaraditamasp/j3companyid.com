@@ -2,6 +2,7 @@ import { defineConfig } from "@njinlabs/njin/config";
 import s3Adapter from "@njinlabs/njin/adapters/s3";
 
 export default defineConfig({
+  publicUrl: "https://j3companyid.com",
   port: Number(process.env.PORT ?? 3000),
   db: {
     path: process.env.DB_PATH ?? "rocksdb://data",
