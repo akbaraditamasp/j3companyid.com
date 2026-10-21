@@ -18,7 +18,7 @@ beforeCreate(manualInvoice, async () => ({ invoiceNumber: generateInvoiceNumber(
 const generating = new Set<string>();
 
 const generateDokuLink = async (record: Awaited<ReturnType<typeof manualInvoice.create>>) => {
-  const id = record.id.id as string;
+  const id = record.id as string;
   if (generating.has(id)) return;
   if (record.dokuPaymentUrl) return;
   if (record.status !== "PENDING") return;

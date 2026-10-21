@@ -23,7 +23,7 @@ const uniqueSlug = async (
 
   while (true) {
     const { data } = await model.read({ filters: { slug: candidate }, limit: 1, populate: "none" });
-    const collision = data.find((row) => row.id.id !== excludeId);
+    const collision = data.find((row) => row.id !== excludeId);
     if (!collision) return candidate;
 
     suffix += 1;

@@ -62,7 +62,7 @@ export default route().post("/api/stalwart/sync", async () => {
         quota: njinAccount.quota,
       });
 
-      await mailAccount.update(njinAccount.id.id as string, {
+      await mailAccount.update(njinAccount.id as string, {
         stalwartId: created.stalwartId,
         passwordDirty: false,
         lastSyncedAt: new Date().toISOString(),
@@ -88,7 +88,7 @@ export default route().post("/api/stalwart/sync", async () => {
       }
 
       // Stalwart wins for every other field.
-      await mailAccount.update(njinAccount.id.id as string, {
+      await mailAccount.update(njinAccount.id as string, {
         name: stalwartAccount.name ?? undefined,
         quota: stalwartAccount.quota ?? undefined,
         status: stalwartAccount.hasCredentials ? "ACTIVE" : "DISABLED",

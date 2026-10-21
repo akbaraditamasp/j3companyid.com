@@ -204,7 +204,7 @@ export default route({ prefix: "/api/checkout" })
             notificationUrl: `${origin}${DOKU_WEBHOOK_PATH}`,
           });
 
-          await order.update(record.id.id as string, {
+          await order.update(record.id as string, {
             dokuTokenId: invoice.tokenId,
             dokuPaymentUrl: invoice.paymentUrl,
           });
@@ -213,7 +213,7 @@ export default route({ prefix: "/api/checkout" })
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           console.error(`[doku] failed to create invoice for order "${orderNumber}":`, err);
-          await order.update(record.id.id as string, { paymentError: message });
+          await order.update(record.id as string, { paymentError: message });
           return status(502, { message: "Gagal membuat invoice pembayaran, silakan coba lagi" });
         }
       }
@@ -253,13 +253,13 @@ export default route({ prefix: "/api/checkout" })
       if (!res.ok) {
         const errorBody = await res.text().catch(() => "");
         console.error(`[xendit] failed to create invoice for order "${orderNumber}" (${res.status}):`, errorBody);
-        await order.update(record.id.id as string, { paymentError: `Xendit request failed (${res.status}): ${errorBody}` });
+        await order.update(record.id as string, { paymentError: `Xendit request failed (${res.status}): ${errorBody}` });
         return status(502, { message: "Gagal membuat invoice pembayaran, silakan coba lagi" });
       }
 
       const invoice = (await res.json()) as { id: string; invoice_url: string };
 
-      await order.update(record.id.id as string, {
+      await order.update(record.id as string, {
         xenditInvoiceId: invoice.id,
         xenditInvoiceUrl: invoice.invoice_url,
       });
@@ -304,7 +304,7 @@ export default route({ prefix: "/api/checkout" })
       const existing = result.data[0];
       if (!existing) return { received: true };
 
-      await order.update(existing.id.id as string, {
+      await order.update(existing.id as string, {
         status: newStatus,
         ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
       });
@@ -347,7 +347,7 @@ export default route({ prefix: "/api/checkout" })
       const orderResult = await order.read({ filters: { orderNumber: { $eq: invoiceNumber } }, limit: 1 });
       const existingOrder = orderResult.data[0];
       if (existingOrder) {
-        await order.update(existingOrder.id.id as string, {
+        await order.update(existingOrder.id as string, {
           status: newStatus,
           ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
         });
@@ -359,7 +359,7 @@ export default route({ prefix: "/api/checkout" })
       const invoiceResult = await manualInvoice.read({ filters: { invoiceNumber: { $eq: invoiceNumber } }, limit: 1 });
       const existingInvoice = invoiceResult.data[0];
       if (existingInvoice) {
-        await manualInvoice.update(existingInvoice.id.id as string, {
+        await manualInvoice.update(existingInvoice.id as string, {
           status: newStatus,
           ...(newStatus === "PAID" ? { paidAt: new Date().toISOString() } : {}),
         });
