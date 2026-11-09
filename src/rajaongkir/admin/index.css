@@ -1,2 +1,3 @@
+/* No @source on purpose: this plugin styles itself inline and uses no utility classes.
+   Scanning would turn words in code and comments into global classes in the admin page. */
 @import "@njinlabs/njin-admin/plugin.css";
-@source "./";

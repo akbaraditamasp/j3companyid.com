@@ -7,8 +7,6 @@ type Destination = { id: number; label: string };
 // Draws only the input — the admin supplies the label and error. Stores the RajaOngkir
 // destination id (a number); the readable label is written by the server into the sibling
 // field named by `options.labelField` (see src/hooks/rajaongkir-label.ts).
-// Keep plain words like those of CSS utilities out of comments here: Tailwind scans this
-// folder and would emit them as global classes into the admin page.
 export const DestinationField = ({ value, onChange, onBlur, disabled, values, options }: FieldProps) => {
   const client = useClient();
   const { labelField } = (options ?? {}) as { labelField?: string };
@@ -60,7 +58,9 @@ export const DestinationField = ({ value, onChange, onBlur, disabled, values, op
         options={results}
         value={current}
         onSearch={search}
-        onValueChange={(option) => onChange(option ? Number(option.value) : undefined)}
+        // Cleared -> 0, not undefined: the form drops undefined from the payload, so the old id
+        // would be kept. 0 is the "not set" value (see src/vars/shipping.ts).
+        onValueChange={(option) => onChange(option ? Number(option.value) : 0)}
         loading={loading}
         disabled={disabled}
         placeholder="Cari kelurahan / kecamatan / kota…"

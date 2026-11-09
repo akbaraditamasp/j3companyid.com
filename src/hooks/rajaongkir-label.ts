@@ -9,12 +9,15 @@ import { cachedDestinationLabel } from "../services/rajaongkir";
 // and save) -> the previous label is kept rather than blanked.
 beforeVarsUpdate(shippingVars, (data) => {
   if (typeof data.originAreaId !== "number") return;
+  // 0 = the admin cleared the address: drop the stale label with it.
+  if (data.originAreaId === 0) return { originLabel: "" };
   const label = cachedDestinationLabel(data.originAreaId);
   if (label) return { originLabel: label };
 });
 
 beforeUpdate(order, (data) => {
   if (typeof data.shippingDestinationId !== "number") return;
+  if (data.shippingDestinationId === 0) return { shippingDestinationLabel: "" };
   const label = cachedDestinationLabel(data.shippingDestinationId);
   if (label) return { shippingDestinationLabel: label };
 });
