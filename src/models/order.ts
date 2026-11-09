@@ -28,7 +28,7 @@ const order = makeModel("order", {
       numeric({ label: "Shipping Destination" }, (z) => z.optional()),
       ["rajaongkir:destination", { labelField: "shippingDestinationLabel" }],
     ),
-    shippingDestinationLabel: text({ label: "Shipping Destination Label", hideForm: true }, (z) => z.optional()),
+    shippingDestinationLabel: text({ label: "Shipping Destination Label" }, (z) => z.optional()),
     shippingCourier: text({ label: "Shipping Courier" }, (z) => z.optional()),
     shippingService: text({ label: "Shipping Service" }, (z) => z.optional()),
     shippingEtd: text({ label: "Estimated Delivery" }, (z) => z.optional()),

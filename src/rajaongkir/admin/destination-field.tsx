@@ -18,13 +18,16 @@ export const DestinationField = ({ value, onChange, onBlur, disabled, values, op
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
+  // Labels of addresses picked in this session, by id. The label field in the form still holds
+  // the old text until the record is saved, so a fresh pick is remembered here.
+  const [known, setKnown] = useState<Record<number, string>>({});
+
   const id = typeof value === "number" && value > 0 ? value : null;
   const storedLabel = labelField ? values[labelField] : undefined;
-  // Edit mode: the saved label if the form carries it, else just the id.
-  const current: SelectOption | null =
-    id === null
-      ? null
-      : { value: String(id), label: typeof storedLabel === "string" && storedLabel ? storedLabel : `ID ${id}` };
+  const label =
+    (id !== null ? known[id] : undefined) ??
+    (typeof storedLabel === "string" && storedLabel ? storedLabel : undefined);
+  const current: SelectOption | null = id === null ? null : { value: String(id), label: label ?? `ID ${id}` };
 
   const search = (text: string) => {
     clearTimeout(timer.current);
@@ -60,7 +63,10 @@ export const DestinationField = ({ value, onChange, onBlur, disabled, values, op
         onSearch={search}
         // Cleared -> 0, not undefined: the form drops undefined from the payload, so the old id
         // would be kept. 0 is the "not set" value (see src/vars/shipping.ts).
-        onValueChange={(option) => onChange(option ? Number(option.value) : 0)}
+        onValueChange={(option) => {
+          if (option) setKnown((prev) => ({ ...prev, [Number(option.value)]: option.label }));
+          onChange(option ? Number(option.value) : 0);
+        }}
         loading={loading}
         disabled={disabled}
         placeholder="Cari kelurahan / kecamatan / kota…"
