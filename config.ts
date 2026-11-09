@@ -1,5 +1,6 @@
 import { defineConfig } from "@njinlabs/njin/config";
 import postgresAdapter from "@njinlabs/njin/adapters/postgres";
+import sqliteAdapter from "@njinlabs/njin/adapters/sqlite";
 import s3Adapter from "@njinlabs/njin/adapters/s3";
 
 export default defineConfig({
@@ -11,12 +12,16 @@ export default defineConfig({
       : [],
   },
   adapters: {
-    db: postgresAdapter({
-      url: process.env.DATABASE_URL!,
-      max: process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : undefined,
-      tls: process.env.DB_TLS === "true",
-      schema: process.env.DB_SCHEMA || undefined,
-    }),
+    // DB_DRIVER=sqlite -> local file database (no server needed); anything else -> Postgres.
+    db:
+      process.env.DB_DRIVER === "sqlite"
+        ? sqliteAdapter({ path: process.env.SQLITE_PATH ?? "data/local.db" })
+        : postgresAdapter({
+            url: process.env.DATABASE_URL!,
+            max: process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : undefined,
+            tls: process.env.DB_TLS === "true",
+            schema: process.env.DB_SCHEMA || undefined,
+          }),
     file: s3Adapter({
       bucket: process.env.S3_BUCKET!,
       region: process.env.S3_REGION,
@@ -42,7 +47,9 @@ export default defineConfig({
     () => import("./src/hooks/mail-account"),
     () => import("./src/hooks/slug"),
     () => import("./src/hooks/manual-invoice"),
+    () => import("./src/hooks/rajaongkir-label"),
   ],
+  admin: [import.meta.resolve("./src/rajaongkir/admin/index.tsx")],
   routes: [
     () => import("./src/routes/checkout"),
     () => import("./src/routes/shipping"),

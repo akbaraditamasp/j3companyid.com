@@ -24,6 +24,12 @@ export type CostOption = {
   etd: string;
 };
 
+// id -> label of every destination search has returned. RajaOngkir has no lookup-by-id, and
+// the admin's picker only submits the id, so src/hooks/rajaongkir-label.ts resolves the
+// label from here right after the admin searched (in-memory; lost on restart).
+const labelCache = new Map<number, string>();
+export const cachedDestinationLabel = (id: number) => labelCache.get(id);
+
 export const searchDestination = async (search: string, limit = 10): Promise<Destination[]> => {
   const qs = new URLSearchParams({ search, limit: String(limit) });
   const res = await fetch(`${BASE_URL}/destination/domestic-destination?${qs.toString()}`, {
@@ -33,7 +39,9 @@ export const searchDestination = async (search: string, limit = 10): Promise<Des
   if (!res.ok) throw new Error(`RajaOngkir destination search failed (${res.status})`);
 
   const json = (await res.json()) as { data: Destination[] };
-  return json.data ?? [];
+  const data = json.data ?? [];
+  for (const d of data) labelCache.set(d.id, d.label);
+  return data;
 };
 
 // RajaOngkir wants application/x-www-form-urlencoded (stringified numbers) — the

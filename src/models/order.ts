@@ -1,4 +1,4 @@
-import { makeModel, text, email, numeric, select, object, array, date } from "@njinlabs/njin";
+import { makeModel, text, email, numeric, select, object, array, date, plugin } from "@njinlabs/njin";
 import z from "zod";
 
 const order = makeModel("order", {
@@ -24,8 +24,11 @@ const order = makeModel("order", {
     subtotal: numeric({ label: "Subtotal" }),
     shippingCost: numeric({ label: "Shipping Cost" }, (z) => z.default(0)),
     shippingType: select({ label: "Shipping Type" }, ["DOMESTIC", "INTERNATIONAL"], (z) => z.default("DOMESTIC")),
-    shippingDestinationId: numeric({ label: "Shipping Destination ID" }, (z) => z.optional()),
-    shippingDestinationLabel: text({ label: "Shipping Destination Label" }, (z) => z.optional()),
+    shippingDestinationId: plugin(
+      numeric({ label: "Shipping Destination" }, (z) => z.optional()),
+      ["rajaongkir:destination", { labelField: "shippingDestinationLabel" }],
+    ),
+    shippingDestinationLabel: text({ label: "Shipping Destination Label", hideForm: true }, (z) => z.optional()),
     shippingCourier: text({ label: "Shipping Courier" }, (z) => z.optional()),
     shippingService: text({ label: "Shipping Service" }, (z) => z.optional()),
     shippingEtd: text({ label: "Estimated Delivery" }, (z) => z.optional()),
