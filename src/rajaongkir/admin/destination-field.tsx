@@ -1,6 +1,6 @@
 import { useClient, type FieldProps } from "@njinlabs/njin-admin/sdk";
 import { Combobox, type SelectOption } from "@njinlabs/njin-admin/ui";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Destination = { id: number; label: string };
 
@@ -27,7 +27,14 @@ export const DestinationField = ({ value, onChange, onBlur, disabled, values, op
   const label =
     (id !== null ? known[id] : undefined) ??
     (typeof storedLabel === "string" && storedLabel ? storedLabel : undefined);
-  const current: SelectOption | null = id === null ? null : { value: String(id), label: label ?? `ID ${id}` };
+  // Must keep the same identity between renders: Combobox compares its value with `!==` and, on
+  // any change, resets the typed text to the selected label. A new object per render (which every
+  // keystroke causes, through setResults) made the box impossible to edit.
+  const shown = label ?? (id !== null ? `ID ${id}` : "");
+  const current = useMemo<SelectOption | null>(
+    () => (id === null ? null : { value: String(id), label: shown }),
+    [id, shown],
+  );
 
   const search = (text: string) => {
     clearTimeout(timer.current);
